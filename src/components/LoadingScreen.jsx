@@ -68,7 +68,6 @@ const features = [
 
 export default function LoadingScreen({ onComplete }) {
   const [progress, setProgress] = useState(0)
-  const [currentConcept, setCurrentConcept] = useState(0)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -85,15 +84,9 @@ export default function LoadingScreen({ onComplete }) {
     return () => clearInterval(interval)
   }, [onComplete])
 
-  useEffect(() => {
-    const conceptInterval = setInterval(() => {
-      setCurrentConcept(prev => (prev + 1) % loadingConcepts.length)
-    }, 2000) // Cycle every 2 seconds
-
-    return () => clearInterval(conceptInterval)
-  }, [])
-
-  const concept = loadingConcepts[currentConcept]
+  // Calculate current concept based on progress
+  const conceptIndex = Math.min(Math.floor(progress / (100 / loadingConcepts.length)), loadingConcepts.length - 1)
+  const concept = loadingConcepts[conceptIndex]
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${concept.bgGradient} flex items-center justify-center relative overflow-hidden`}>
@@ -163,7 +156,9 @@ export default function LoadingScreen({ onComplete }) {
         {/* Loading Progress */}
         <div className="w-full max-w-md mx-auto mb-8 animate-slide-up" style={{ animationDelay: '0.6s' }}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-earth-400 font-medium">Loading</span>
+            <span className="text-sm text-earth-400 font-medium">
+              {progress < 17 ? 'Initializing...' : progress < 33 ? 'Connecting farms...' : progress < 50 ? 'Analyzing markets...' : progress < 67 ? 'Optimizing routes...' : progress < 83 ? 'Processing insights...' : 'Finalizing...'}
+            </span>
             <span className="text-sm text-gold-400 font-bold">{progress}%</span>
           </div>
           <div className="h-2 bg-earth-800 rounded-full overflow-hidden">
@@ -191,7 +186,7 @@ export default function LoadingScreen({ onComplete }) {
           <div
             key={index}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              index === currentConcept ? 'bg-gold-400 w-6' : 'bg-earth-700'
+              index === conceptIndex ? 'bg-gold-400 w-6' : index < conceptIndex ? 'bg-gold-400' : 'bg-earth-700'
             }`}
           />
         ))}
