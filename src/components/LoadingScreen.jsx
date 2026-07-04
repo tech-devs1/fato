@@ -113,7 +113,7 @@ export default function LoadingScreen({ onComplete }) {
       <div className="relative z-10 text-center px-6 max-w-2xl mx-auto">
         {/* Concept Image */}
         <div className="mb-8 relative flex justify-center">
-          <div className="w-80 h-80 rounded-2xl overflow-hidden shadow-2xl animate-scale-in border-2 border-white/20 bg-gradient-to-br from-earth-800 to-earth-900">
+          <div className="w-80 h-80 rounded-2xl overflow-hidden animate-scale-in">
             <img 
               src={concept.image} 
               alt={concept.title}
@@ -121,7 +121,7 @@ export default function LoadingScreen({ onComplete }) {
               onError={(e) => {
                 // Fallback to gradient if image not found
                 e.target.style.display = 'none'
-                e.target.parentElement.className = `w-80 h-80 rounded-2xl shadow-2xl animate-scale-in border-2 border-white/20 bg-gradient-to-br ${concept.gradient} flex items-center justify-center`
+                e.target.parentElement.className = `w-80 h-80 rounded-2xl animate-scale-in bg-gradient-to-br ${concept.gradient} flex items-center justify-center`
                 e.target.parentElement.innerHTML = `
                   <div class="text-center p-6">
                     <p class="text-white/60 text-sm mb-2">Image not found</p>
@@ -129,6 +129,22 @@ export default function LoadingScreen({ onComplete }) {
                   </div>
                 `
               }}
+            />
+          </div>
+        </div>
+
+        {/* Loading Progress */}
+        <div className="w-full max-w-md mx-auto mb-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-earth-400 font-medium">
+              {progress < 17 ? 'Initializing...' : progress < 33 ? 'Connecting farms...' : progress < 50 ? 'Analyzing markets...' : progress < 67 ? 'Optimizing routes...' : progress < 83 ? 'Processing insights...' : 'Finalizing...'}
+            </span>
+            <span className="text-sm text-gold-400 font-bold">{progress}%</span>
+          </div>
+          <div className="h-2 bg-earth-800 rounded-full overflow-hidden">
+            <div 
+              className={`h-full bg-gradient-to-r ${concept.gradient} rounded-full transition-all duration-300 ease-out`}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -152,22 +168,6 @@ export default function LoadingScreen({ onComplete }) {
         <p className="text-earth-300 mb-8 animate-slide-up" style={{ animationDelay: '0.4s' }}>
           {concept.description}
         </p>
-
-        {/* Loading Progress */}
-        <div className="w-full max-w-md mx-auto mb-8 animate-slide-up" style={{ animationDelay: '0.6s' }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-earth-400 font-medium">
-              {progress < 17 ? 'Initializing...' : progress < 33 ? 'Connecting farms...' : progress < 50 ? 'Analyzing markets...' : progress < 67 ? 'Optimizing routes...' : progress < 83 ? 'Processing insights...' : 'Finalizing...'}
-            </span>
-            <span className="text-sm text-gold-400 font-bold">{progress}%</span>
-          </div>
-          <div className="h-2 bg-earth-800 rounded-full overflow-hidden">
-            <div 
-              className={`h-full bg-gradient-to-r ${concept.gradient} rounded-full transition-all duration-300 ease-out`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
 
         {/* Features */}
         <div className="flex flex-wrap justify-center gap-4 md:gap-6 animate-slide-up" style={{ animationDelay: '0.8s' }}>
