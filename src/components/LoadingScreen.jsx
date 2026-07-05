@@ -28,67 +28,96 @@ export default function LoadingScreen({ onComplete }) {
   }, [progress])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Sky Background */}
+    <div className="min-h-screen bg-gradient-to-b from-sky-500 via-sky-400 to-sky-300 flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Realistic Sky Background with atmospheric effects */}
       <div className="absolute inset-0">
-        {/* Sun */}
+        {/* Sun with realistic glow */}
         <div 
-          className="absolute w-24 h-24 bg-yellow-400 rounded-full shadow-lg transition-all duration-3000"
+          className="absolute rounded-full transition-all duration-3000"
           style={{
+            width: '120px',
+            height: '120px',
             top: stage === 'planting' ? '20%' : stage === 'growing' ? '15%' : stage === 'harvesting' ? '10%' : '8%',
             right: '15%',
-            boxShadow: '0 0 60px rgba(255, 200, 0, 0.6)'
+            background: 'radial-gradient(circle, #FFD700 0%, #FFA500 50%, #FF8C00 100%)',
+            boxShadow: '0 0 80px rgba(255, 200, 0, 0.8), 0 0 120px rgba(255, 165, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.3)'
           }}
         />
         
-        {/* Clouds */}
-        <div className="absolute top-10 left-20 w-32 h-12 bg-white rounded-full opacity-80" />
-        <div className="absolute top-8 left-28 w-24 h-10 bg-white rounded-full opacity-80" />
-        <div className="absolute top-16 right-32 w-40 h-14 bg-white rounded-full opacity-80" />
+        {/* Realistic clouds with depth */}
+        <div className="absolute top-10 left-20 w-40 h-16 bg-gradient-to-b from-white via-gray-100 to-gray-200 rounded-full opacity-90 shadow-xl" style={{ filter: 'blur(1px)' }} />
+        <div className="absolute top-8 left-32 w-32 h-12 bg-gradient-to-b from-white via-gray-100 to-gray-200 rounded-full opacity-85 shadow-lg" />
+        <div className="absolute top-16 right-24 w-48 h-20 bg-gradient-to-b from-white via-gray-100 to-gray-200 rounded-full opacity-90 shadow-xl" style={{ filter: 'blur(1px)' }} />
       </div>
 
-      {/* Ground/Soil */}
-      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-amber-800 via-amber-700 to-amber-600" />
+      {/* Realistic Ground/Soil with texture */}
+      <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-amber-900 via-amber-800 to-amber-700" style={{ 
+        backgroundImage: 'linear-gradient(135deg, rgba(0,0,0,0.1) 25%, transparent 25%), linear-gradient(225deg, rgba(0,0,0,0.1) 25%, transparent 25%)',
+        backgroundSize: '20px 20px'
+      }} />
 
       {/* Main Animation Container */}
-      <div className="relative z-10 w-full max-w-4xl h-96 flex items-end justify-center pb-32">
+      <div className="relative z-10 w-full max-w-4xl h-96 flex items-end justify-center pb-40">
         {/* Planting Stage (0-20%) */}
         {stage === 'planting' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <svg viewBox="0 0 400 300" className="w-full h-full">
-              {/* Seeds falling */}
+              <defs>
+                <radialGradient id="seedGradient" cx="30%" cy="30%" r="70%">
+                  <stop offset="0%" stopColor="#A0522D" />
+                  <stop offset="100%" stopColor="#5D3A1A" />
+                </radialGradient>
+                <linearGradient id="rainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="rgba(135, 206, 235, 0.8)" />
+                  <stop offset="100%" stopColor="rgba(70, 130, 180, 0.4)" />
+                </linearGradient>
+              </defs>
+              
+              {/* Realistic seeds falling with 3D effect */}
               {[...Array(5)].map((_, i) => (
-                <circle
-                  key={i}
-                  cx={80 + i * 60}
-                  cy={50 + (progress % 20) * 5}
-                  r="4"
-                  fill="#8B4513"
-                  className="animate-bounce"
-                  style={{ animationDelay: `${i * 0.2}s` }}
-                />
+                <g key={i}>
+                  <ellipse
+                    cx={80 + i * 60}
+                    cy={50 + (progress % 20) * 5}
+                    rx="5"
+                    ry="3"
+                    fill="url(#seedGradient)"
+                    style={{ transform: `rotate(${30 + i * 10}deg)` }}
+                  />
+                  <ellipse
+                    cx={80 + i * 60}
+                    cy={50 + (progress % 20) * 5}
+                    rx="5"
+                    ry="3"
+                    fill="rgba(255,255,255,0.2)"
+                    style={{ transform: `rotate(${30 + i * 10}deg) translate(1px, -1px)` }}
+                  />
+                </g>
               ))}
               
-              {/* Rain drops */}
-              {[...Array(10)].map((_, i) => (
+              {/* Realistic rain drops with depth */}
+              {[...Array(15)].map((_, i) => (
                 <line
                   key={i}
-                  x1={20 + i * 40}
+                  x1={20 + i * 25}
                   y1={0}
-                  x2={20 + i * 40}
-                  y2={30}
-                  stroke="#87CEEB"
+                  x2={20 + i * 25}
+                  y2={40}
+                  stroke="url(#rainGradient)"
                   strokeWidth="2"
+                  strokeLinecap="round"
                   className="animate-pulse"
-                  style={{ animationDelay: `${i * 0.1}s` }}
+                  style={{ animationDelay: `${i * 0.1}s`, opacity: 0.6 + Math.random() * 0.4 }}
                 />
               ))}
               
-              {/* Small sprouts emerging */}
+              {/* Small sprouts emerging with realistic shading */}
               {[...Array(5)].map((_, i) => (
                 <g key={i} style={{ opacity: progress > 10 ? 1 : 0.3 }}>
-                  <line x1={80 + i * 60} y1={250} x2={80 + i * 60} y2={240} stroke="#228B22" strokeWidth="3" />
-                  <ellipse cx={80 + i * 60} cy={235} rx="8" ry="4" fill="#32CD32" />
+                  <line x1={80 + i * 60} y1={250} x2={80 + i * 60} y2={240} stroke="#1B5E20" strokeWidth="4" />
+                  <line x1={80 + i * 60} y1={250} x2={80 + i * 60} y2={240} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+                  <ellipse cx={80 + i * 60} cy="235" rx="10" ry="5" fill="#2E7D32" />
+                  <ellipse cx={78 + i * 60} cy="233" rx="3" ry="2" fill="rgba(255,255,255,0.3)" />
                 </g>
               ))}
             </svg>
@@ -99,43 +128,90 @@ export default function LoadingScreen({ onComplete }) {
         {stage === 'growing' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <svg viewBox="0 0 400 300" className="w-full h-full">
+              <defs>
+                <linearGradient id="stemGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#1B5E20" />
+                  <stop offset="50%" stopColor="#2E7D32" />
+                  <stop offset="100%" stopColor="#1B5E20" />
+                </linearGradient>
+                <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#4CAF50" />
+                  <stop offset="100%" stopColor="#1B5E20" />
+                </linearGradient>
+              </defs>
+              
               {[...Array(5)].map((_, i) => (
                 <g key={i}>
-                  {/* Growing stem */}
-                  <line
-                    x1={80 + i * 60}
-                    y1={250}
-                    x2={80 + i * 60}
-                    y2={150 + (progress - 20) * 2}
-                    stroke="#228B22"
-                    strokeWidth="4"
+                  {/* 3D growing stem with gradient */}
+                  <rect
+                    x={78 + i * 60}
+                    y={150 + (progress - 20) * 2}
+                    width="4"
+                    height={100 - (progress - 20) * 2}
+                    fill="url(#stemGradient)"
+                    rx="2"
                   />
-                  {/* Leaves */}
+                  
+                  {/* Realistic leaves with depth */}
                   <ellipse
-                    cx={70 + i * 60}
+                    cx={65 + i * 60}
                     cy={180 + (progress - 20)}
-                    rx="12"
-                    ry="6"
-                    fill="#32CD32"
+                    rx="18"
+                    ry="8"
+                    fill="url(#leafGradient)"
                     className="origin-right animate-pulse"
-                    style={{ transform: `rotate(${-15 + Math.sin(Date.now() / 500) * 10}deg)` }}
+                    style={{ 
+                      transform: `rotate(${-15 + Math.sin(Date.now() / 500) * 8}deg)`,
+                      filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.2))'
+                    }}
                   />
                   <ellipse
-                    cx={90 + i * 60}
-                    cy={180 + (progress - 20)}
-                    rx="12"
-                    ry="6"
-                    fill="#32CD32"
-                    className="origin-left animate-pulse"
-                    style={{ transform: `rotate(${15 + Math.sin(Date.now() / 500) * 10}deg)` }}
+                    cx={63 + i * 60}
+                    cy={178 + (progress - 20)}
+                    rx="5"
+                    ry="2"
+                    fill="rgba(255,255,255,0.25)"
+                    className="origin-right animate-pulse"
+                    style={{ transform: `rotate(${-15 + Math.sin(Date.now() / 500) * 8}deg)` }}
                   />
-                  {/* Top leaves */}
+                  
+                  <ellipse
+                    cx={95 + i * 60}
+                    cy={180 + (progress - 20)}
+                    rx="18"
+                    ry="8"
+                    fill="url(#leafGradient)"
+                    className="origin-left animate-pulse"
+                    style={{ 
+                      transform: `rotate(${15 + Math.sin(Date.now() / 500) * 8}deg)`,
+                      filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.2))'
+                    }}
+                  />
+                  <ellipse
+                    cx={97 + i * 60}
+                    cy={178 + (progress - 20)}
+                    rx="5"
+                    ry="2"
+                    fill="rgba(255,255,255,0.25)"
+                    className="origin-left animate-pulse"
+                    style={{ transform: `rotate(${15 + Math.sin(Date.now() / 500) * 8}deg)` }}
+                  />
+                  
+                  {/* Top leaves with shading */}
                   <ellipse
                     cx={80 + i * 60}
                     cy={140 + (progress - 20) * 2}
-                    rx="10"
-                    ry="5"
-                    fill="#228B22"
+                    rx="14"
+                    ry="6"
+                    fill="#388E3C"
+                    style={{ filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.2))' }}
+                  />
+                  <ellipse
+                    cx={78 + i * 60}
+                    cy={138 + (progress - 20) * 2}
+                    rx="4"
+                    ry="2"
+                    fill="rgba(255,255,255,0.2)"
                   />
                 </g>
               ))}
@@ -147,17 +223,64 @@ export default function LoadingScreen({ onComplete }) {
         {stage === 'harvesting' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <svg viewBox="0 0 400 300" className="w-full h-full">
-              {/* Mature crops */}
+              <defs>
+                <linearGradient id="cropGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FFD700" />
+                  <stop offset="50%" stopColor="#FFA500" />
+                  <stop offset="100%" stopColor="#FF8C00" />
+                </linearGradient>
+                <linearGradient id="basketGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#A0522D" />
+                  <stop offset="100%" stopColor="#5D3A1A" />
+                </linearGradient>
+              </defs>
+              
+              {/* Mature crops with realistic shading */}
               {[...Array(5)].map((_, i) => (
                 <g key={i}>
-                  <line x1={80 + i * 60} y1={250} x2={80 + i * 60} y2="130" stroke="#228B22" strokeWidth="4" />
-                  <ellipse cx={80 + i * 60} cy="120" rx="15" ry="8" fill="#FFD700" />
-                  <ellipse cx={70 + i * 60} cy="160" rx="12" ry="6" fill="#32CD32" />
-                  <ellipse cx={90 + i * 60} cy="160" rx="12" ry="6" fill="#32CD32" />
+                  <rect
+                    x={78 + i * 60}
+                    y="130"
+                    width="4"
+                    height="120"
+                    fill="url(#stemGradient)"
+                    rx="2"
+                  />
+                  <ellipse
+                    cx={80 + i * 60}
+                    cy="115"
+                    rx="20"
+                    ry="12"
+                    fill="url(#cropGradient)"
+                    style={{ filter: 'drop-shadow(3px 3px 4px rgba(0,0,0,0.3))' }}
+                  />
+                  <ellipse
+                    cx={77 + i * 60}
+                    cy="112"
+                    rx="6"
+                    ry="3"
+                    fill="rgba(255,255,255,0.3)"
+                  />
+                  <ellipse
+                    cx={70 + i * 60}
+                    cy="160"
+                    rx="16"
+                    ry="8"
+                    fill="url(#leafGradient)"
+                    style={{ filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.2))' }}
+                  />
+                  <ellipse
+                    cx={90 + i * 60}
+                    cy="160"
+                    rx="16"
+                    ry="8"
+                    fill="url(#leafGradient)"
+                    style={{ filter: 'drop-shadow(2px 2px 2px rgba(0,0,0,0.2))' }}
+                  />
                 </g>
               ))}
               
-              {/* Baskets moving to bus */}
+              {/* Realistic woven baskets moving to bus */}
               {[...Array(3)].map((_, i) => (
                 <g
                   key={i}
@@ -166,11 +289,62 @@ export default function LoadingScreen({ onComplete }) {
                     opacity: progress > 45 + i * 5 ? 1 : 0
                   }}
                 >
-                  <rect x={200 + i * 40} y="200" width="30" height="25" fill="#8B4513" rx="3" />
-                  <rect x={205 + i * 40} y="195" width="20" height="5" fill="#A0522D" />
-                  {/* Produce in basket */}
-                  <circle cx={210 + i * 40} cy="190" r="6" fill="#FF6347" />
-                  <circle cx={215 + i * 40} cy="188" r="5" fill="#FFD700" />
+                  <rect
+                    x={200 + i * 40}
+                    y="195"
+                    width="36"
+                    height="30"
+                    fill="url(#basketGradient)"
+                    rx="4"
+                    style={{ filter: 'drop-shadow(3px 3px 4px rgba(0,0,0,0.3))' }}
+                  />
+                  <rect
+                    x={205 + i * 40}
+                    y="188"
+                    width="26"
+                    height="8"
+                    fill="#8B4513"
+                    rx="2"
+                  />
+                  {/* Woven texture */}
+                  {[...Array(3)].map((_, j) => (
+                    <line
+                      key={j}
+                      x1={203 + i * 40 + j * 10}
+                      y1="195"
+                      x2={203 + i * 40 + j * 10}
+                      y2="225"
+                      stroke="#5D3A1A"
+                      strokeWidth="1"
+                    />
+                  ))}
+                  {/* Realistic produce in basket */}
+                  <circle
+                    cx={212 + i * 40}
+                    cy="185"
+                    r="8"
+                    fill="#DC143C"
+                    style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))' }}
+                  />
+                  <circle
+                    cx={214 + i * 40}
+                    cy="183"
+                    r="3"
+                    fill="rgba(255,255,255,0.3)"
+                  />
+                  <circle
+                    cx="220 + i * 40"
+                    cy="182"
+                    r="7"
+                    fill="url(#cropGradient)"
+                    style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))' }}
+                  />
+                  <circle
+                    cx="222 + i * 40"
+                    cy="180"
+                    r="2"
+                    fill="rgba(255,255,255,0.3)"
+                  />
                 </g>
               ))}
             </svg>
@@ -181,44 +355,89 @@ export default function LoadingScreen({ onComplete }) {
         {stage === 'loading' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <svg viewBox="0 0 400 300" className="w-full h-full">
-              {/* Bus */}
+              <defs>
+                <linearGradient id="busGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#4169E1" />
+                  <stop offset="50%" stopColor="#1E3A8A" />
+                  <stop offset="100%" stopColor="#1E40AF" />
+                </linearGradient>
+                <linearGradient id="windowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#87CEEB" />
+                  <stop offset="100%" stopColor="#4682B4" />
+                </linearGradient>
+                <radialGradient id="wheelGradient" cx="30%" cy="30%" r="70%">
+                  <stop offset="0%" stopColor="#555" />
+                  <stop offset="100%" stopColor="#222" />
+                </radialGradient>
+              </defs>
+              
+              {/* Realistic 3D bus */}
               <g
                 style={{
                   transform: `translateX(${(progress - 60) * 3}px)`,
                   opacity: 1
                 }}
               >
-                {/* Bus body */}
-                <rect x="150" y="150" width="120" height="60" fill="#4169E1" rx="5" />
-                {/* Windows */}
-                <rect x="160" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
-                <rect x="195" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
-                <rect x="230" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
-                {/* Wheels */}
-                <circle cx="175" cy="210" r="12" fill="#333" />
-                <circle cx="245" cy="210" r="12" fill="#333" />
-                {/* Door */}
-                <rect x="250" y="155" width="15" height="40" fill="#333" rx="2" />
+                {/* Bus body with 3D effect */}
+                <rect
+                  x="145"
+                  y="145"
+                  width="130"
+                  height="70"
+                  fill="url(#busGradient)"
+                  rx="8"
+                  style={{ filter: 'drop-shadow(4px 4px 8px rgba(0,0,0,0.4))' }}
+                />
+                <rect
+                  x="150"
+                  y="150"
+                  width="120"
+                  height="60"
+                  fill="rgba(255,255,255,0.1)"
+                  rx="6"
+                />
+                
+                {/* Windows with reflection */}
+                <rect x="158" y="158" width="28" height="22" fill="url(#windowGradient)" rx="3" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' }} />
+                <line x1="165" y1="158" x2="165" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                <rect x="195" y="158" width="28" height="22" fill="url(#windowGradient)" rx="3" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' }} />
+                <line x1="202" y1="158" x2="202" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                <rect x="232" y="158" width="28" height="22" fill="url(#windowGradient)" rx="3" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' }} />
+                <line x1="239" y1="158" x2="239" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                
+                {/* 3D wheels */}
+                <circle cx="175" cy="215" r="16" fill="url(#wheelGradient)" style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.5))' }} />
+                <circle cx="175" cy="215" r="8" fill="#666" />
+                <circle cx="175" cy="215" r="3" fill="#888" />
+                <circle cx="255" cy="215" r="16" fill="url(#wheelGradient)" style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.5))' }} />
+                <circle cx="255" cy="215" r="8" fill="#666" />
+                <circle cx="255" cy="215" r="3" fill="#888" />
+                
+                {/* Door with depth */}
+                <rect x="252" y="150" width="18" height="45" fill="#2D3748" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                <rect x="255" y="155" width="12" height="35" fill="rgba(255,255,255,0.1)" rx="2" />
                 
                 {/* Baskets being loaded */}
                 {progress > 65 && (
                   <g style={{ transform: `translateY(${(progress - 65) * 2}px)` }}>
-                    <rect x="170" y="130" width="25" height="20" fill="#8B4513" rx="2" />
-                    <circle cx="182" cy="125" r="5" fill="#FF6347" />
+                    <rect x="168" y="125" width="30" height="24" fill="url(#basketGradient)" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                    <circle cx="182" cy="118" r="7" fill="#DC143C" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))' }} />
                   </g>
                 )}
                 {progress > 70 && (
                   <g style={{ transform: `translateY(${(progress - 70) * 2}px)` }}>
-                    <rect x="200" y="130" width="25" height="20" fill="#8B4513" rx="2" />
-                    <circle cx="212" cy="125" r="5" fill="#FFD700" />
+                    <rect x="200" y="125" width="30" height="24" fill="url(#basketGradient)" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                    <circle cx="214" cy="118" r="7" fill="url(#cropGradient)" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.3))' }} />
                   </g>
                 )}
               </g>
               
-              {/* Workers */}
+              {/* Worker with realistic proportions */}
               <g style={{ opacity: progress < 75 ? 1 : 0 }}>
-                <circle cx="130" cy="180" r="10" fill="#FFE4C4" />
-                <rect x="125" y="190" width="10" height="20" fill="#2E8B57" />
+                <circle cx="130" cy="175" r="12" fill="#DEB887" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                <ellipse cx="128" cy="172" rx="4" ry="2" fill="rgba(255,255,255,0.3)" />
+                <rect x="122" y="187" width="16" height="28" fill="#228B22" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                <rect x="118" y="190" width="8" height="20" fill="#1B5E20" rx="2" />
               </g>
             </svg>
           </div>
@@ -228,27 +447,64 @@ export default function LoadingScreen({ onComplete }) {
         {stage === 'transportation' && (
           <div className="absolute inset-0 flex items-center justify-center">
             <svg viewBox="0 0 400 300" className="w-full h-full">
-              {/* Bus driving across */}
+              <defs>
+                <linearGradient id="busGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#4169E1" />
+                  <stop offset="50%" stopColor="#1E3A8A" />
+                  <stop offset="100%" stopColor="#1E40AF" />
+                </linearGradient>
+                <linearGradient id="windowGradient2" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#87CEEB" />
+                  <stop offset="100%" stopColor="#4682B4" />
+                </linearGradient>
+                <radialGradient id="wheelGradient2" cx="30%" cy="30%" r="70%">
+                  <stop offset="0%" stopColor="#555" />
+                  <stop offset="100%" stopColor="#222" />
+                </radialGradient>
+              </defs>
+              
+              {/* Bus driving across with 3D effect */}
               <g
                 style={{
                   transform: `translateX(${(progress - 80) * 15 - 100}px)`,
                   transition: 'transform 0.1s linear'
                 }}
               >
-                <rect x="150" y="150" width="120" height="60" fill="#4169E1" rx="5" />
-                <rect x="160" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
-                <rect x="195" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
-                <rect x="230" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
-                <circle cx="175" cy="210" r="12" fill="#333" className="animate-spin" style={{ animationDuration: '0.5s' }} />
-                <circle cx="245" cy="210" r="12" fill="#333" className="animate-spin" style={{ animationDuration: '0.5s' }} />
-                <rect x="250" y="155" width="15" height="40" fill="#333" rx="2" />
-                {/* Full baskets visible */}
-                <rect x="165" y="125" width="25" height="20" fill="#8B4513" rx="2" />
-                <rect x="195" y="125" width="25" height="20" fill="#8B4513" rx="2" />
-                <rect x="225" y="125" width="25" height="20" fill="#8B4513" rx="2" />
+                <rect
+                  x="145"
+                  y="145"
+                  width="130"
+                  height="70"
+                  fill="url(#busGradient2)"
+                  rx="8"
+                  style={{ filter: 'drop-shadow(4px 4px 8px rgba(0,0,0,0.4))' }}
+                />
+                <rect x="150" y="150" width="120" height="60" fill="rgba(255,255,255,0.1)" rx="6" />
+                
+                <rect x="158" y="158" width="28" height="22" fill="url(#windowGradient2)" rx="3" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' }} />
+                <line x1="165" y1="158" x2="165" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                <rect x="195" y="158" width="28" height="22" fill="url(#windowGradient2)" rx="3" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' }} />
+                <line x1="202" y1="158" x2="202" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                <rect x="232" y="158" width="28" height="22" fill="url(#windowGradient2)" rx="3" style={{ filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.2))' }} />
+                <line x1="239" y1="158" x2="239" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+                
+                <circle cx="175" cy="215" r="16" fill="url(#wheelGradient2)" className="animate-spin" style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.5))', animationDuration: '0.5s' }} />
+                <circle cx="175" cy="215" r="8" fill="#666" />
+                <circle cx="175" cy="215" r="3" fill="#888" />
+                <circle cx="255" cy="215" r="16" fill="url(#wheelGradient2)" className="animate-spin" style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.5))', animationDuration: '0.5s' }} />
+                <circle cx="255" cy="215" r="8" fill="#666" />
+                <circle cx="255" cy="215" r="3" fill="#888" />
+                
+                <rect x="252" y="150" width="18" height="45" fill="#2D3748" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                <rect x="255" y="155" width="12" height="35" fill="rgba(255,255,255,0.1)" rx="2" />
+                
+                {/* Full baskets visible on top */}
+                <rect x="163" y="120" width="30" height="24" fill="url(#basketGradient)" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                <rect x="193" y="120" width="30" height="24" fill="url(#basketGradient)" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
+                <rect x="223" y="120" width="30" height="24" fill="url(#basketGradient)" rx="3" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }} />
               </g>
               
-              {/* NUNYA AI emerges */}
+              {/* NUNYA AI emerges with 3D text effect */}
               {progress > 90 && (
                 <g
                   style={{
@@ -257,10 +513,13 @@ export default function LoadingScreen({ onComplete }) {
                     transformOrigin: 'center'
                   }}
                 >
-                  <text x="200" y="100" textAnchor="middle" fontSize="36" fontWeight="bold" fill="#2E8B57">
+                  <text x="200" y="95" textAnchor="middle" fontSize="42" fontWeight="bold" fill="#1B5E20" style={{ filter: 'drop-shadow(3px 3px 4px rgba(0,0,0,0.4))' }}>
                     NUNYA AI
                   </text>
-                  <text x="200" y="130" textAnchor="middle" fontSize="14" fill="#228B22">
+                  <text x="200" y="95" textAnchor="middle" fontSize="42" fontWeight="bold" fill="rgba(255,255,255,0.1)">
+                    NUNYA AI
+                  </text>
+                  <text x="200" y="125" textAnchor="middle" fontSize="16" fill="#2E7D32" style={{ filter: 'drop-shadow(2px 2px 3px rgba(0,0,0,0.3))' }}>
                     Growing Agriculture with Intelligence
                   </text>
                 </g>
@@ -270,16 +529,19 @@ export default function LoadingScreen({ onComplete }) {
         )}
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Bar with 3D effect */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-80">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-amber-900 font-medium capitalize">{stage}</span>
-          <span className="text-sm text-amber-900 font-bold">{Math.round(progress)}%</span>
+          <span className="text-sm text-amber-900 font-medium capitalize" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.5)' }}>{stage}</span>
+          <span className="text-sm text-amber-900 font-bold" style={{ textShadow: '1px 1px 2px rgba(255,255,255,0.5)' }}>{Math.round(progress)}%</span>
         </div>
-        <div className="h-3 bg-amber-200 rounded-full overflow-hidden">
+        <div className="h-4 bg-gradient-to-b from-amber-300 to-amber-400 rounded-full overflow-hidden shadow-inner" style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.1)' }}>
           <div
-            className="h-full bg-gradient-to-r from-green-500 via-amber-500 to-green-600 rounded-full transition-all duration-100 ease-out"
-            style={{ width: `${progress}%` }}
+            className="h-full bg-gradient-to-r from-green-600 via-green-500 to-green-600 rounded-full transition-all duration-100 ease-out"
+            style={{ 
+              width: `${progress}%`,
+              boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3), 0 1px 2px rgba(0,0,0,0.2)'
+            }}
           />
         </div>
       </div>
