@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 export default function LoadingScreen({ onComplete }) {
   const [progress, setProgress] = useState(0)
-  const [growthStage, setGrowthStage] = useState(0)
+  const [stage, setStage] = useState('planting') // planting, growing, harvesting, loading, transportation
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -12,161 +12,277 @@ export default function LoadingScreen({ onComplete }) {
           setTimeout(() => onComplete(), 1000)
           return 100
         }
-        return prev + 1
+        return prev + 100 / 150 // 150 increments = 15 seconds
       })
-    }, 100) // 100ms per increment = 10 seconds total
+    }, 100)
 
     return () => clearInterval(interval)
   }, [onComplete])
 
   useEffect(() => {
-    // Update growth stage based on progress
-    const stage = Math.floor(progress / 25) // 4 stages (0-25, 26-50, 51-75, 76-100)
-    setGrowthStage(Math.min(stage, 3))
+    if (progress < 20) setStage('planting')
+    else if (progress < 40) setStage('growing')
+    else if (progress < 60) setStage('harvesting')
+    else if (progress < 80) setStage('loading')
+    else setStage('transportation')
   }, [progress])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-forest-900 via-terracotta-800 to-gold-900 flex items-center justify-center relative overflow-hidden">
-      {/* Animated Colorful Background */}
+    <div className="min-h-screen bg-gradient-to-b from-sky-400 via-sky-300 to-sky-200 flex flex-col items-center justify-center relative overflow-hidden">
+      {/* Sky Background */}
       <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-forest-600/30 via-terracotta-500/20 to-gold-500/30 animate-pulse-slow" />
-        <div className="absolute top-20 right-20 w-96 h-96 bg-forest-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 left-20 w-80 h-80 bg-gold-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-terracotta-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
-
-      {/* Rain Effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(50)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-0.5 h-8 bg-gradient-to-b from-transparent via-blue-300/40 to-blue-400/60 rounded-full animate-rain"
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${1 + Math.random()}s`
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Growing Plant/Logo */}
-      <div className="relative z-10 flex flex-col items-center justify-center">
-        {/* Soil/Ground */}
-        <div className="w-64 h-8 bg-gradient-to-r from-earth-800 via-earth-700 to-earth-800 rounded-full mb-0 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-forest-600/30 via-terracotta-500/30 to-gold-500/30 rounded-full" />
-        </div>
-
-        {/* Growing Stem */}
+        {/* Sun */}
         <div 
-          className="w-2 bg-gradient-to-t from-forest-600 via-forest-500 to-forest-400 rounded-full transition-all duration-1000 ease-out"
-          style={{ 
-            height: `${growthStage * 40 + 20}px`,
-            marginBottom: '0px'
+          className="absolute w-24 h-24 bg-yellow-400 rounded-full shadow-lg transition-all duration-3000"
+          style={{
+            top: stage === 'planting' ? '20%' : stage === 'growing' ? '15%' : stage === 'harvesting' ? '10%' : '8%',
+            right: '15%',
+            boxShadow: '0 0 60px rgba(255, 200, 0, 0.6)'
           }}
         />
-
-        {/* Growing Leaves */}
-        <div className="relative">
-          {/* Left Leaf */}
-          <div 
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[20px] border-t-transparent border-r-[30px] border-r-forest-500 border-b-[20px] border-b-transparent transition-all duration-1000 ease-out"
-            style={{ 
-              opacity: growthStage >= 1 ? 1 : 0,
-              transform: growthStage >= 1 ? 'translateY(-50%) rotate(-30deg)' : 'translateY(-50%) rotate(-30deg) scale(0)'
-            }}
-          />
-          
-          {/* Right Leaf */}
-          <div 
-            className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[20px] border-t-transparent border-l-[30px] border-l-forest-500 border-b-[20px] border-b-transparent transition-all duration-1000 ease-out"
-            style={{ 
-              opacity: growthStage >= 1 ? 1 : 0,
-              transform: growthStage >= 1 ? 'translateY(-50%) rotate(30deg)' : 'translateY(-50%) rotate(30deg) scale(0)'
-            }}
-          />
-
-          {/* Top Leaves */}
-          {growthStage >= 2 && (
-            <>
-              <div 
-                className="absolute -top-8 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-b-[25px] border-b-forest-400 border-r-[15px] border-r-transparent transition-all duration-1000 ease-out"
-                style={{ opacity: 1 }}
-              />
-              <div 
-                className="absolute -top-6 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-b-[25px] border-b-gold-400 border-r-[15px] border-r-transparent transition-all duration-1000 ease-out"
-                style={{ opacity: 1, transform: 'rotate(45deg)' }}
-              />
-            </>
-          )}
-
-          {/* Flower/Bud */}
-          {growthStage >= 3 && (
-            <div className="absolute -top-16 left-1/2 -translate-x-1/2 animate-pulse">
-              <div className="w-12 h-12 bg-gradient-to-br from-gold-400 to-terracotta-500 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xs">AI</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Brand Name */}
-        <div 
-          className="mt-8 text-center transition-all duration-1000 ease-out"
-          style={{ 
-            opacity: growthStage >= 1 ? 1 : 0,
-            transform: growthStage >= 1 ? 'translateY(0)' : 'translateY(20px)'
-          }}
-        >
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-2">
-            Nunya AI
-          </h1>
-          <p className="text-gold-300 text-lg">
-            Growing Agriculture with Intelligence
-          </p>
-        </div>
-
-        {/* Progress Bar */}
-        <div 
-          className="w-64 mt-8 transition-all duration-1000 ease-out"
-          style={{ 
-            opacity: growthStage >= 2 ? 1 : 0
-          }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-white/70">Loading</span>
-            <span className="text-sm text-gold-400 font-bold">{progress}%</span>
-          </div>
-          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-forest-500 via-terracotta-500 to-gold-500 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
+        
+        {/* Clouds */}
+        <div className="absolute top-10 left-20 w-32 h-12 bg-white rounded-full opacity-80" />
+        <div className="absolute top-8 left-28 w-24 h-10 bg-white rounded-full opacity-80" />
+        <div className="absolute top-16 right-32 w-40 h-14 bg-white rounded-full opacity-80" />
       </div>
 
-      <style jsx>{`
-        @keyframes rain {
-          0% {
-            transform: translateY(-100vh);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          90% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(100vh);
-            opacity: 0;
-          }
-        }
-        .animate-rain {
-          animation: rain 2s linear infinite;
-        }
-      `}</style>
+      {/* Ground/Soil */}
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-amber-800 via-amber-700 to-amber-600" />
+
+      {/* Main Animation Container */}
+      <div className="relative z-10 w-full max-w-4xl h-96 flex items-end justify-center pb-32">
+        {/* Planting Stage (0-20%) */}
+        {stage === 'planting' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg viewBox="0 0 400 300" className="w-full h-full">
+              {/* Seeds falling */}
+              {[...Array(5)].map((_, i) => (
+                <circle
+                  key={i}
+                  cx={80 + i * 60}
+                  cy={50 + (progress % 20) * 5}
+                  r="4"
+                  fill="#8B4513"
+                  className="animate-bounce"
+                  style={{ animationDelay: `${i * 0.2}s` }}
+                />
+              ))}
+              
+              {/* Rain drops */}
+              {[...Array(10)].map((_, i) => (
+                <line
+                  key={i}
+                  x1={20 + i * 40}
+                  y1={0}
+                  x2={20 + i * 40}
+                  y2={30}
+                  stroke="#87CEEB"
+                  strokeWidth="2"
+                  className="animate-pulse"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                />
+              ))}
+              
+              {/* Small sprouts emerging */}
+              {[...Array(5)].map((_, i) => (
+                <g key={i} style={{ opacity: progress > 10 ? 1 : 0.3 }}>
+                  <line x1={80 + i * 60} y1={250} x2={80 + i * 60} y2={240} stroke="#228B22" strokeWidth="3" />
+                  <ellipse cx={80 + i * 60} cy={235} rx="8" ry="4" fill="#32CD32" />
+                </g>
+              ))}
+            </svg>
+          </div>
+        )}
+
+        {/* Growing Stage (20-40%) */}
+        {stage === 'growing' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg viewBox="0 0 400 300" className="w-full h-full">
+              {[...Array(5)].map((_, i) => (
+                <g key={i}>
+                  {/* Growing stem */}
+                  <line
+                    x1={80 + i * 60}
+                    y1={250}
+                    x2={80 + i * 60}
+                    y2={150 + (progress - 20) * 2}
+                    stroke="#228B22"
+                    strokeWidth="4"
+                  />
+                  {/* Leaves */}
+                  <ellipse
+                    cx={70 + i * 60}
+                    cy={180 + (progress - 20)}
+                    rx="12"
+                    ry="6"
+                    fill="#32CD32"
+                    className="origin-right animate-pulse"
+                    style={{ transform: `rotate(${-15 + Math.sin(Date.now() / 500) * 10}deg)` }}
+                  />
+                  <ellipse
+                    cx={90 + i * 60}
+                    cy={180 + (progress - 20)}
+                    rx="12"
+                    ry="6"
+                    fill="#32CD32"
+                    className="origin-left animate-pulse"
+                    style={{ transform: `rotate(${15 + Math.sin(Date.now() / 500) * 10}deg)` }}
+                  />
+                  {/* Top leaves */}
+                  <ellipse
+                    cx={80 + i * 60}
+                    cy={140 + (progress - 20) * 2}
+                    rx="10"
+                    ry="5"
+                    fill="#228B22"
+                  />
+                </g>
+              ))}
+            </svg>
+          </div>
+        )}
+
+        {/* Harvesting Stage (40-60%) */}
+        {stage === 'harvesting' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg viewBox="0 0 400 300" className="w-full h-full">
+              {/* Mature crops */}
+              {[...Array(5)].map((_, i) => (
+                <g key={i}>
+                  <line x1={80 + i * 60} y1={250} x2={80 + i * 60} y2="130" stroke="#228B22" strokeWidth="4" />
+                  <ellipse cx={80 + i * 60} cy="120" rx="15" ry="8" fill="#FFD700" />
+                  <ellipse cx={70 + i * 60} cy="160" rx="12" ry="6" fill="#32CD32" />
+                  <ellipse cx={90 + i * 60} cy="160" rx="12" ry="6" fill="#32CD32" />
+                </g>
+              ))}
+              
+              {/* Baskets moving to bus */}
+              {[...Array(3)].map((_, i) => (
+                <g
+                  key={i}
+                  style={{
+                    transform: `translateX(${(progress - 40) * 8 + i * 30}px)`,
+                    opacity: progress > 45 + i * 5 ? 1 : 0
+                  }}
+                >
+                  <rect x={200 + i * 40} y="200" width="30" height="25" fill="#8B4513" rx="3" />
+                  <rect x={205 + i * 40} y="195" width="20" height="5" fill="#A0522D" />
+                  {/* Produce in basket */}
+                  <circle cx={210 + i * 40} cy="190" r="6" fill="#FF6347" />
+                  <circle cx={215 + i * 40} cy="188" r="5" fill="#FFD700" />
+                </g>
+              ))}
+            </svg>
+          </div>
+        )}
+
+        {/* Loading Stage (60-80%) */}
+        {stage === 'loading' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg viewBox="0 0 400 300" className="w-full h-full">
+              {/* Bus */}
+              <g
+                style={{
+                  transform: `translateX(${(progress - 60) * 3}px)`,
+                  opacity: 1
+                }}
+              >
+                {/* Bus body */}
+                <rect x="150" y="150" width="120" height="60" fill="#4169E1" rx="5" />
+                {/* Windows */}
+                <rect x="160" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
+                <rect x="195" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
+                <rect x="230" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
+                {/* Wheels */}
+                <circle cx="175" cy="210" r="12" fill="#333" />
+                <circle cx="245" cy="210" r="12" fill="#333" />
+                {/* Door */}
+                <rect x="250" y="155" width="15" height="40" fill="#333" rx="2" />
+                
+                {/* Baskets being loaded */}
+                {progress > 65 && (
+                  <g style={{ transform: `translateY(${(progress - 65) * 2}px)` }}>
+                    <rect x="170" y="130" width="25" height="20" fill="#8B4513" rx="2" />
+                    <circle cx="182" cy="125" r="5" fill="#FF6347" />
+                  </g>
+                )}
+                {progress > 70 && (
+                  <g style={{ transform: `translateY(${(progress - 70) * 2}px)` }}>
+                    <rect x="200" y="130" width="25" height="20" fill="#8B4513" rx="2" />
+                    <circle cx="212" cy="125" r="5" fill="#FFD700" />
+                  </g>
+                )}
+              </g>
+              
+              {/* Workers */}
+              <g style={{ opacity: progress < 75 ? 1 : 0 }}>
+                <circle cx="130" cy="180" r="10" fill="#FFE4C4" />
+                <rect x="125" y="190" width="10" height="20" fill="#2E8B57" />
+              </g>
+            </svg>
+          </div>
+        )}
+
+        {/* Transportation Stage (80-100%) */}
+        {stage === 'transportation' && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg viewBox="0 0 400 300" className="w-full h-full">
+              {/* Bus driving across */}
+              <g
+                style={{
+                  transform: `translateX(${(progress - 80) * 15 - 100}px)`,
+                  transition: 'transform 0.1s linear'
+                }}
+              >
+                <rect x="150" y="150" width="120" height="60" fill="#4169E1" rx="5" />
+                <rect x="160" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
+                <rect x="195" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
+                <rect x="230" y="160" width="25" height="20" fill="#87CEEB" rx="2" />
+                <circle cx="175" cy="210" r="12" fill="#333" className="animate-spin" style={{ animationDuration: '0.5s' }} />
+                <circle cx="245" cy="210" r="12" fill="#333" className="animate-spin" style={{ animationDuration: '0.5s' }} />
+                <rect x="250" y="155" width="15" height="40" fill="#333" rx="2" />
+                {/* Full baskets visible */}
+                <rect x="165" y="125" width="25" height="20" fill="#8B4513" rx="2" />
+                <rect x="195" y="125" width="25" height="20" fill="#8B4513" rx="2" />
+                <rect x="225" y="125" width="25" height="20" fill="#8B4513" rx="2" />
+              </g>
+              
+              {/* NUNYA AI emerges */}
+              {progress > 90 && (
+                <g
+                  style={{
+                    opacity: (progress - 90) / 10,
+                    transform: `scale(${(progress - 90) / 10})`,
+                    transformOrigin: 'center'
+                  }}
+                >
+                  <text x="200" y="100" textAnchor="middle" fontSize="36" fontWeight="bold" fill="#2E8B57">
+                    NUNYA AI
+                  </text>
+                  <text x="200" y="130" textAnchor="middle" fontSize="14" fill="#228B22">
+                    Growing Agriculture with Intelligence
+                  </text>
+                </g>
+              )}
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {/* Progress Bar */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-80">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-amber-900 font-medium capitalize">{stage}</span>
+          <span className="text-sm text-amber-900 font-bold">{Math.round(progress)}%</span>
+        </div>
+        <div className="h-3 bg-amber-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-green-500 via-amber-500 to-green-600 rounded-full transition-all duration-100 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
     </div>
   )
 }
