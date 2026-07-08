@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation } from 'lucide-react'
+import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import ReputationCard from '../reputation/ReputationCard'
 
-export default function TransportDashboard({ onNavigate }) {
+export default function TransportDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('jobs')
-  const { userFullProfile } = useAuth()
+  const { userFullProfile, userProfile, logOut } = useAuth()
 
   const mockProfile = {
     user: { displayName: 'Kofi Mensah' },
@@ -35,7 +35,12 @@ export default function TransportDashboard({ onNavigate }) {
   }
 
   const profile = userFullProfile || mockProfile
-  const displayName = profile.user?.displayName || 'Kofi'
+  const displayName = profile.user?.displayName || userProfile?.displayName || 'Kofi'
+
+  async function handleLogout() {
+    await logOut()
+    if (onLogout) onLogout()
+  }
 
   const tabs = [
     { id: 'jobs', label: 'Available Jobs', icon: <Truck className="w-5 h-5" /> },
@@ -80,22 +85,32 @@ export default function TransportDashboard({ onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-ivory-50 pb-24">
-      {/* Header */}
-      <header className="glass sticky top-0 z-50 px-6 py-4">
+    <div className="min-h-screen pb-24" style={{ background: 'linear-gradient(160deg, #fffbeb 0%, #fef3c7 40%, #fef7f0 100%)' }}>
+      {/* Transporter Identity Header */}
+      <header className="sticky top-0 z-50 px-6 py-4" style={{ background: 'linear-gradient(135deg, #92400e 0%, #b45309 60%, #d97706 100%)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-earth-900">Transport Dashboard</h1>
-            <p className="text-sm text-earth-500">Welcome, {displayName}</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <Truck className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Fleet Hub</h1>
+              <p className="text-xs text-amber-200">Transporter Portal</p>
+            </div>
           </div>
-          <button className="p-2 rounded-xl hover:bg-earth-100 transition-colors">
-            <Settings className="w-6 h-6 text-earth-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-white/20 rounded-full">
+              <p className="text-xs font-semibold text-white">{displayName}</p>
+            </div>
+            <button onClick={handleLogout} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+              <LogOut className="w-5 h-5 text-white" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="px-6 py-4 overflow-x-auto">
+      <div className="px-6 py-4 overflow-x-auto bg-white/60 border-b border-amber-100">
         <div className="flex gap-2 min-w-max">
           {tabs.map((tab) => (
             <button
@@ -103,9 +118,10 @@ export default function TransportDashboard({ onNavigate }) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
                 activeTab === tab.id
-                  ? 'bg-terracotta-600 text-white'
-                  : 'bg-white text-earth-600 hover:bg-earth-100'
+                  ? 'text-white shadow-md'
+                  : 'bg-white text-earth-600 hover:bg-amber-50'
               }`}
+              style={activeTab === tab.id ? { background: 'linear-gradient(135deg, #92400e, #d97706)' } : {}}
             >
               {tab.icon}
               <span>{tab.label}</span>
@@ -190,13 +206,13 @@ export default function TransportDashboard({ onNavigate }) {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 glass border-t border-earth-200 px-6 py-4">
+      {/* Transporter Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-amber-100 px-6 py-3" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-around">
-          <NavItem icon={<Truck className="w-6 h-6" />} label="Home" onClick={() => onNavigate('home')} />
-          <NavItem icon={<ShoppingBag className="w-6 h-6" />} label="Market" onClick={() => onNavigate('buyer')} />
-          <NavItem icon={<Truck className="w-6 h-6" />} label="Transport" active />
-          <NavItem icon={<Settings className="w-6 h-6" />} label="Profile" onClick={() => onNavigate('farmer')} />
+          <NavItem icon={<Truck className="w-6 h-6" />} label="Jobs" active={activeTab === 'jobs'} color="#b45309" onClick={() => setActiveTab('jobs')} />
+          <NavItem icon={<Navigation className="w-6 h-6" />} label="Deliveries" active={activeTab === 'deliveries'} color="#b45309" onClick={() => setActiveTab('deliveries')} />
+          <NavItem icon={<Route className="w-6 h-6" />} label="Routes" active={activeTab === 'routes'} color="#b45309" onClick={() => setActiveTab('routes')} />
+          <NavItem icon={<DollarSign className="w-6 h-6" />} label="Revenue" active={activeTab === 'revenue'} color="#b45309" onClick={() => setActiveTab('revenue')} />
         </div>
       </nav>
     </div>
@@ -443,13 +459,14 @@ function VehicleCard({ vehicle }) {
   )
 }
 
-function NavItem({ icon, label, active, onClick }) {
+function NavItem({ icon, label, active, onClick, color = '#c1440e' }) {
   return (
     <button
       onClick={onClick}
       className={`flex flex-col items-center gap-1 transition-all duration-300 ${
-        active ? 'text-terracotta-600' : 'text-earth-400 hover:text-earth-600'
+        active ? 'scale-105' : 'text-earth-400 hover:text-earth-600'
       }`}
+      style={active ? { color } : {}}
     >
       {icon}
       <span className="text-xs font-medium">{label}</span>

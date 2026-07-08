@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets } from 'lucide-react'
+import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets, LogOut, Bell } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import ReputationCard from '../reputation/ReputationCard'
 
-export default function FarmerDashboard({ onNavigate }) {
+export default function FarmerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview')
-  const { userFullProfile } = useAuth()
+  const { userFullProfile, userProfile, logOut } = useAuth()
 
   const mockProfile = {
     user: { displayName: 'Emmanuel A.' },
@@ -33,7 +33,12 @@ export default function FarmerDashboard({ onNavigate }) {
   }
 
   const profile = userFullProfile || mockProfile
-  const displayName = profile.user?.displayName || 'Emmanuel'
+  const displayName = profile.user?.displayName || userProfile?.displayName || 'Emmanuel'
+
+  async function handleLogout() {
+    await logOut()
+    if (onLogout) onLogout()
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Sprout className="w-5 h-5" /> },
@@ -68,22 +73,32 @@ export default function FarmerDashboard({ onNavigate }) {
   ]
 
   return (
-    <div className="min-h-screen bg-ivory-50 pb-24">
-      {/* Header */}
-      <header className="glass sticky top-0 z-50 px-6 py-4">
+    <div className="min-h-screen pb-24" style={{ background: 'linear-gradient(160deg, #f0f9f4 0%, #fef7f0 100%)' }}>
+      {/* Farmer Identity Header */}
+      <header className="sticky top-0 z-50 px-6 py-4" style={{ background: 'linear-gradient(135deg, #2d6a4f 0%, #40916c 60%, #52b788 100%)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-earth-900">Farmer Dashboard</h1>
-            <p className="text-sm text-earth-500">Welcome, {displayName}</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <Sprout className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">My Farm</h1>
+              <p className="text-xs text-green-100">Farmer Portal</p>
+            </div>
           </div>
-          <button className="p-2 rounded-xl hover:bg-earth-100 transition-colors">
-            <Settings className="w-6 h-6 text-earth-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-white/20 rounded-full">
+              <p className="text-xs font-semibold text-white">{displayName}</p>
+            </div>
+            <button onClick={handleLogout} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+              <LogOut className="w-5 h-5 text-white" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="px-6 py-4 overflow-x-auto">
+      <div className="px-6 py-4 overflow-x-auto bg-white/60 border-b border-green-100">
         <div className="flex gap-2 min-w-max">
           {tabs.map((tab) => (
             <button
@@ -91,9 +106,10 @@ export default function FarmerDashboard({ onNavigate }) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
                 activeTab === tab.id
-                  ? 'bg-terracotta-600 text-white'
-                  : 'bg-white text-earth-600 hover:bg-earth-100'
+                  ? 'text-white shadow-md'
+                  : 'bg-white text-earth-600 hover:bg-green-50'
               }`}
+              style={activeTab === tab.id ? { background: 'linear-gradient(135deg, #2d6a4f, #52b788)' } : {}}
             >
               {tab.icon}
               <span>{tab.label}</span>
@@ -230,13 +246,13 @@ export default function FarmerDashboard({ onNavigate }) {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 glass border-t border-earth-200 px-6 py-4">
+      {/* Farmer Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-green-100 px-6 py-3" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-around">
-          <NavItem icon={<Sprout className="w-6 h-6" />} label="Home" onClick={() => onNavigate('home')} />
-          <NavItem icon={<Package className="w-6 h-6" />} label="Market" onClick={() => onNavigate('buyer')} />
-          <NavItem icon={<Truck className="w-6 h-6" />} label="Transport" onClick={() => onNavigate('transport')} />
-          <NavItem icon={<Settings className="w-6 h-6" />} label="Profile" active />
+          <NavItem icon={<Sprout className="w-6 h-6" />} label="Dashboard" active={true} color="#2d6a4f" onClick={() => setActiveTab('overview')} />
+          <NavItem icon={<Package className="w-6 h-6" />} label="Produce" onClick={() => setActiveTab('produce')} />
+          <NavItem icon={<CheckCircle className="w-6 h-6" />} label="Orders" onClick={() => setActiveTab('orders')} />
+          <NavItem icon={<Heart className="w-6 h-6" />} label="Health" onClick={() => setActiveTab('health')} />
         </div>
       </nav>
     </div>
@@ -473,13 +489,14 @@ function HealthCard({ health }) {
   )
 }
 
-function NavItem({ icon, label, active, onClick }) {
+function NavItem({ icon, label, active, onClick, color = '#c1440e' }) {
   return (
     <button
       onClick={onClick}
       className={`flex flex-col items-center gap-1 transition-all duration-300 ${
-        active ? 'text-terracotta-600' : 'text-earth-400 hover:text-earth-600'
+        active ? 'scale-105' : 'text-earth-400 hover:text-earth-600'
       }`}
+      style={active ? { color } : {}}
     >
       {icon}
       <span className="text-xs font-medium">{label}</span>

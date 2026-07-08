@@ -1,10 +1,19 @@
 import React, { useState } from 'react'
-import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle, LogOut } from 'lucide-react'
 import { rankListings } from '../../lib/reputationService'
 import VerificationBadge from '../reputation/VerificationBadge'
+import { useAuth } from '../../contexts/AuthContext'
 
-export default function BuyerDashboard({ onNavigate }) {
+export default function BuyerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('marketplace')
+  const { userProfile, logOut } = useAuth()
+
+  const displayName = userProfile?.displayName || 'Buyer'
+
+  async function handleLogout() {
+    await logOut()
+    if (onLogout) onLogout()
+  }
 
   const tabs = [
     { id: 'marketplace', label: 'Marketplace', icon: <ShoppingBag className="w-5 h-5" /> },
@@ -44,25 +53,32 @@ export default function BuyerDashboard({ onNavigate }) {
   ]
 
   return (
-    <div className="min-h-screen bg-ivory-50 pb-24">
-      {/* Header */}
-      <header className="glass sticky top-0 z-50 px-6 py-4">
+    <div className="min-h-screen pb-24" style={{ background: 'linear-gradient(160deg, #eef2ff 0%, #fef7f0 100%)' }}>
+      {/* Buyer Identity Header */}
+      <header className="sticky top-0 z-50 px-6 py-4" style={{ background: 'linear-gradient(135deg, #312e81 0%, #4338ca 60%, #6366f1 100%)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-earth-900">Buyer Dashboard</h1>
-            <p className="text-sm text-earth-500">Welcome, Keta Market Co.</p>
-          </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-xl hover:bg-earth-100 transition-colors">
-              <Heart className="w-6 h-6 text-earth-600" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-terracotta-500 rounded-full" />
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <ShoppingBag className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Marketplace</h1>
+              <p className="text-xs text-indigo-200">Buyer Portal</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 bg-white/20 rounded-full">
+              <p className="text-xs font-semibold text-white">{displayName}</p>
+            </div>
+            <button onClick={handleLogout} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+              <LogOut className="w-5 h-5 text-white" />
             </button>
           </div>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="px-6 py-4 overflow-x-auto">
+      <div className="px-6 py-4 overflow-x-auto bg-white/60 border-b border-indigo-100">
         <div className="flex gap-2 min-w-max">
           {tabs.map((tab) => (
             <button
@@ -70,9 +86,10 @@ export default function BuyerDashboard({ onNavigate }) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all duration-300 ${
                 activeTab === tab.id
-                  ? 'bg-terracotta-600 text-white'
-                  : 'bg-white text-earth-600 hover:bg-earth-100'
+                  ? 'text-white shadow-md'
+                  : 'bg-white text-earth-600 hover:bg-indigo-50'
               }`}
+              style={activeTab === tab.id ? { background: 'linear-gradient(135deg, #312e81, #6366f1)' } : {}}
             >
               {tab.icon}
               <span>{tab.label}</span>
@@ -182,13 +199,13 @@ export default function BuyerDashboard({ onNavigate }) {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 glass border-t border-earth-200 px-6 py-4">
+      {/* Buyer Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-indigo-100 px-6 py-3" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-around">
-          <NavItem icon={<ShoppingBag className="w-6 h-6" />} label="Home" onClick={() => onNavigate('home')} />
-          <NavItem icon={<ShoppingBag className="w-6 h-6" />} label="Market" active />
-          <NavItem icon={<Truck className="w-6 h-6" />} label="Transport" onClick={() => onNavigate('transport')} />
-          <NavItem icon={<Package className="w-6 h-6" />} label="Orders" onClick={() => setActiveTab('orders')} />
+          <NavItem icon={<ShoppingBag className="w-6 h-6" />} label="Market" active={activeTab === 'marketplace'} color="#4338ca" onClick={() => setActiveTab('marketplace')} />
+          <NavItem icon={<Package className="w-6 h-6" />} label="Orders" active={activeTab === 'orders'} color="#4338ca" onClick={() => setActiveTab('orders')} />
+          <NavItem icon={<Truck className="w-6 h-6" />} label="Delivery" active={activeTab === 'delivery'} color="#4338ca" onClick={() => setActiveTab('delivery')} />
+          <NavItem icon={<Heart className="w-6 h-6" />} label="Saved" active={activeTab === 'saved'} color="#4338ca" onClick={() => setActiveTab('saved')} />
         </div>
       </nav>
     </div>
@@ -403,13 +420,14 @@ function PriceTrend({ product, current, trend, status }) {
   )
 }
 
-function NavItem({ icon, label, active, onClick }) {
+function NavItem({ icon, label, active, onClick, color = '#c1440e' }) {
   return (
     <button
       onClick={onClick}
       className={`flex flex-col items-center gap-1 transition-all duration-300 ${
-        active ? 'text-terracotta-600' : 'text-earth-400 hover:text-earth-600'
+        active ? 'scale-105' : 'text-earth-400 hover:text-earth-600'
       }`}
+      style={active ? { color } : {}}
     >
       {icon}
       <span className="text-xs font-medium">{label}</span>
