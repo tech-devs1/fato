@@ -1,8 +1,39 @@
 import React, { useState } from 'react'
 import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import ReputationCard from '../reputation/ReputationCard'
 
 export default function FarmerDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview')
+  const { userFullProfile } = useAuth()
+
+  const mockProfile = {
+    user: { displayName: 'Emmanuel A.' },
+    verification: {
+      phone_verified: true,
+      email_verified: true,
+      national_id_verified: true,
+      location_verified: true
+    },
+    reputation: {
+      completed_transactions: 12,
+      successful_transactions: 12,
+      average_rating: 4.9,
+      response_rate: 0.98,
+      reputation_level: 'Active Member'
+    },
+    roleProfile: {
+      farm_name: "Emmanuel's Organic Farm",
+      verification_status: 'Verified Farmer',
+      completed_orders: 12,
+      average_rating: 4.9,
+      response_rate: 0.98,
+      joined_date: '2024-01-10T12:00:00Z'
+    }
+  }
+
+  const profile = userFullProfile || mockProfile
+  const displayName = profile.user?.displayName || 'Emmanuel'
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Sprout className="w-5 h-5" /> },
@@ -43,7 +74,7 @@ export default function FarmerDashboard({ onNavigate }) {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-earth-900">Farmer Dashboard</h1>
-            <p className="text-sm text-earth-500">Welcome, Emmanuel</p>
+            <p className="text-sm text-earth-500">Welcome, {displayName}</p>
           </div>
           <button className="p-2 rounded-xl hover:bg-earth-100 transition-colors">
             <Settings className="w-6 h-6 text-earth-600" />
@@ -75,6 +106,9 @@ export default function FarmerDashboard({ onNavigate }) {
       <main className="px-6 py-6 max-w-7xl mx-auto">
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* Reputation & Verification System */}
+            <ReputationCard profile={profile} role="farmer" />
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Total Produce" value="1,550 kg" change="+12%" icon={<Package />} color="terracotta" />

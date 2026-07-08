@@ -1,12 +1,66 @@
 import React, { useState } from 'react'
-import { Users, Package, Truck, TrendingUp, BarChart3, Settings, AlertTriangle, CheckCircle, Clock, MapPin, ArrowUpRight, ArrowDownRight, Activity, Shield, FileText } from 'lucide-react'
+import { Users, Package, Truck, TrendingUp, BarChart3, Settings, AlertTriangle, CheckCircle, Clock, MapPin, ArrowUpRight, ArrowDownRight, Activity, Shield, FileText, Check, X, Phone, Mail, Award, Map } from 'lucide-react'
+import { adminUpdateVerification } from '../../lib/reputationService'
 
 export default function AdminDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview')
 
+  const [usersPending, setUsersPending] = useState([
+    {
+      id: 'usr_1',
+      name: 'Emmanuel A.',
+      role: 'farmer',
+      farmName: "Emmanuel's Organic Farm",
+      verifications: {
+        phone_verified: true,
+        email_verified: true,
+        national_id_verified: false,
+        location_verified: true,
+      }
+    },
+    {
+      id: 'usr_2',
+      name: 'Grace K.',
+      role: 'farmer',
+      farmName: "Grace's Cassava Hub",
+      verifications: {
+        phone_verified: true,
+        email_verified: false,
+        national_id_verified: false,
+        location_verified: false,
+      }
+    },
+    {
+      id: 'usr_3',
+      name: 'Kofi Mensah',
+      role: 'transport',
+      vehicleType: 'Light Truck',
+      verifications: {
+        phone_verified: true,
+        email_verified: true,
+        national_id_verified: true,
+        location_verified: true,
+        vehicle_verified: false,
+      }
+    },
+    {
+      id: 'usr_4',
+      name: 'Keta Market Co.',
+      role: 'buyer',
+      businessName: 'Keta Market Co.',
+      verifications: {
+        phone_verified: true,
+        email_verified: true,
+        national_id_verified: false,
+        location_verified: false,
+      }
+    }
+  ])
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-5 h-5" /> },
     { id: 'users', label: 'Users', icon: <Users className="w-5 h-5" /> },
+    { id: 'verifications', label: 'Verifications', icon: <Shield className="w-5 h-5" /> },
     { id: 'produce', label: 'Produce', icon: <Package className="w-5 h-5" /> },
     { id: 'supply', label: 'Supply Chain', icon: <Truck className="w-5 h-5" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
@@ -158,6 +212,109 @@ export default function AdminDashboard({ onNavigate }) {
           </div>
         )}
 
+        {activeTab === 'verifications' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-earth-900">Document Verification Queue</h2>
+              <div className="px-3 py-1 bg-terracotta-100 text-terracotta-800 rounded-full text-xs font-semibold">
+                {usersPending.length} Pending Actions
+              </div>
+            </div>
+
+            <div className="grid gap-6">
+              {usersPending.map((user) => {
+                const checklistItems = [
+                  { key: 'phone_verified', label: 'Phone Verification', icon: <Phone className="w-4 h-4" /> },
+                  { key: 'email_verified', label: 'Email Verification', icon: <Mail className="w-4 h-4" /> },
+                  { key: 'national_id_verified', label: 'National Identity ID', icon: <Award className="w-4 h-4" /> },
+                  { key: 'location_verified', label: 'Farming/Business Location', icon: <Map className="w-4 h-4" /> },
+                ]
+                if (user.role === 'transport') {
+                  checklistItems.push({ key: 'vehicle_verified', label: 'Vehicle Condition Audit', icon: <Truck className="w-4 h-4" /> })
+                }
+
+                const handleToggle = async (field, currentValue) => {
+                  const updatedValue = !currentValue
+                  try {
+                    await adminUpdateVerification(user.id, field, updatedValue, user.role)
+                  } catch (e) {
+                    console.warn("Firestore update skipped or offline. Updating local state.", e)
+                  }
+
+                  setUsersPending(prev => prev.map(u => {
+                    if (u.id === user.id) {
+                      return {
+                        ...u,
+                        verifications: {
+                          ...u.verifications,
+                          [field]: updatedValue
+                        }
+                      }
+                    }
+                    return u
+                  }))
+                }
+
+                return (
+                  <div key={user.id} className="glass rounded-3xl p-6 hover:shadow-md transition duration-300">
+                    <div className="flex justify-between items-start border-b border-earth-100 pb-4 mb-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-earth-900">{user.name}</h3>
+                        <p className="text-xs font-semibold text-terracotta-600 capitalize">
+                          {user.role} · {user.farmName || user.businessName || 'Transporter Partner'}
+                        </p>
+                      </div>
+                      <span className="px-2.5 py-0.5 bg-earth-100 text-earth-800 rounded-full text-xs capitalize font-medium">
+                        ID: {user.id}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <p className="text-xs font-bold text-earth-400 uppercase tracking-wider">Credential Verification Checks</p>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {checklistItems.map(item => {
+                          const isVerified = user.verifications[item.key]
+                          return (
+                            <div key={item.key} className="flex items-center justify-between p-3 bg-earth-50/50 rounded-2xl border border-earth-100">
+                              <div className="flex items-center gap-2">
+                                <div className="text-earth-500">
+                                  {item.icon}
+                                </div>
+                                <span className="text-xs text-earth-700 font-medium">{item.label}</span>
+                              </div>
+                              
+                              <button
+                                onClick={() => handleToggle(item.key, isVerified)}
+                                className={`flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-bold transition-all duration-300 ${
+                                  isVerified
+                                    ? 'bg-forest-100 hover:bg-forest-200 text-forest-700'
+                                    : 'bg-terracotta-100 hover:bg-terracotta-200 text-terracotta-700'
+                                }`}
+                              >
+                                {isVerified ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5" />
+                                    <span>Verified</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <X className="w-3.5 h-3.5" />
+                                    <span>Unverified</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'produce' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -268,9 +425,9 @@ export default function AdminDashboard({ onNavigate }) {
       <nav className="fixed bottom-0 left-0 right-0 glass border-t border-earth-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-around">
           <NavItem icon={<BarChart3 className="w-6 h-6" />} label="Home" onClick={() => onNavigate('home')} />
-          <NavItem icon={<Users className="w-6 h-6" />} label="Users" onClick={() => setActiveTab('users')} />
-          <NavItem icon={<Package className="w-6 h-6" />} label="Produce" onClick={() => setActiveTab('produce')} />
-          <NavItem icon={<Settings className="w-6 h-6" />} label="Settings" active />
+          <NavItem icon={<Users className="w-6 h-6" />} label="Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
+          <NavItem icon={<Shield className="w-6 h-6" />} label="Verify" active={activeTab === 'verifications'} onClick={() => setActiveTab('verifications')} />
+          <NavItem icon={<Package className="w-6 h-6" />} label="Produce" active={activeTab === 'produce'} onClick={() => setActiveTab('produce')} />
         </div>
       </nav>
     </div>

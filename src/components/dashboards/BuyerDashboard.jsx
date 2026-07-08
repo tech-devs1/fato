@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
 import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import { rankListings } from '../../lib/reputationService'
+import VerificationBadge from '../reputation/VerificationBadge'
 
 export default function BuyerDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('marketplace')
@@ -13,13 +15,16 @@ export default function BuyerDashboard({ onNavigate }) {
   ]
 
   const marketplaceItems = [
-    { id: 1, name: 'Fresh Cassava', farmer: 'Emmanuel A.', location: 'Ho', quantity: '500 kg', price: '₵2.50/kg', freshness: 95, rating: 4.8, image: 'cassava' },
-    { id: 2, name: 'Organic Tomatoes', farmer: 'Grace K.', location: 'Anloga', quantity: '300 kg', price: '₵4.20/kg', freshness: 92, rating: 4.9, image: 'tomatoes' },
-    { id: 3, name: 'Yellow Maize', farmer: 'Kofi M.', location: 'Keta', quantity: '750 kg', price: '₵3.10/kg', freshness: 88, rating: 4.7, image: 'maize' },
-    { id: 4, name: 'Puna Yams', farmer: 'Comfort D.', location: 'Ho', quantity: '400 kg', price: '₵5.80/kg', freshness: 94, rating: 4.6, image: 'yam' },
-    { id: 5, name: 'Sweet Potatoes', farmer: 'Samuel T.', location: 'Anloga', quantity: '250 kg', price: '₵3.50/kg', freshness: 90, rating: 4.5, image: 'potato' },
-    { id: 6, name: 'Hot Peppers', farmer: 'Beatrice A.', location: 'Keta', quantity: '150 kg', price: '₵6.00/kg', freshness: 96, rating: 4.8, image: 'pepper' },
+    { id: 1, name: 'Fresh Cassava', farmer: 'Emmanuel A.', location: 'Ho', quantity: '500 kg', price: '₵2.50/kg', freshness: 95, rating: 4.8, image: 'cassava', verification_status: 'Verified Farmer', responseRate: 0.95 },
+    { id: 2, name: 'Organic Tomatoes', farmer: 'Grace K.', location: 'Anloga', quantity: '300 kg', price: '₵4.20/kg', freshness: 92, rating: 4.9, image: 'tomatoes', verification_status: 'Growing Reputation', responseRate: 0.98 },
+    { id: 3, name: 'Yellow Maize', farmer: 'Kofi M.', location: 'Keta', quantity: '750 kg', price: '₵3.10/kg', freshness: 88, rating: 4.7, image: 'maize', verification_status: 'Verified Farmer', responseRate: 0.90 },
+    { id: 4, name: 'Puna Yams', farmer: 'Comfort D.', location: 'Ho', quantity: '400 kg', price: '₵5.80/kg', freshness: 94, rating: 4.6, image: 'yam', verification_status: 'Trusted Farmer', responseRate: 0.99 },
+    { id: 5, name: 'Sweet Potatoes', farmer: 'Samuel T.', location: 'Anloga', quantity: '250 kg', price: '₵3.50/kg', freshness: 90, rating: 4.5, image: 'potato', verification_status: 'New Farmer', responseRate: 0.85 },
+    { id: 6, name: 'Hot Peppers', farmer: 'Beatrice A.', location: 'Keta', quantity: '150 kg', price: '₵6.00/kg', freshness: 96, rating: 4.8, image: 'pepper', verification_status: 'Trusted Farmer', responseRate: 1.00 },
+    { id: 7, name: 'White Yam (New User)', farmer: 'Sena Y.', location: 'Ho', quantity: '200 kg', price: '₵4.50/kg', freshness: 98, rating: 0, verification_status: 'Verified Farmer', isVerified: true, responseRate: 0.95 }
   ]
+
+  const rankedItems = rankListings(marketplaceItems, 'Ho')
 
   const orders = [
     { id: 2847, items: 'Cassava 200kg, Tomatoes 100kg', amount: '₵920', status: 'processing', date: 'Today', eta: '2 days' },
@@ -101,7 +106,7 @@ export default function BuyerDashboard({ onNavigate }) {
 
             {/* Marketplace Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {marketplaceItems.map((item) => (
+              {rankedItems.map((item) => (
                 <MarketplaceCard key={item.id} item={item} />
               ))}
             </div>
@@ -212,7 +217,10 @@ function MarketplaceCard({ item }) {
         <div className="flex items-start justify-between mb-2">
           <div>
             <h3 className="text-lg font-bold text-earth-900">{item.name}</h3>
-            <p className="text-sm text-earth-500">{item.farmer}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-sm text-earth-600">{item.farmer}</span>
+              <VerificationBadge status={item.verification_status} role="farmer" />
+            </div>
           </div>
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 text-gold-500 fill-gold-500" />

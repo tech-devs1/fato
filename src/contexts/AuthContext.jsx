@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, googleProvider, db } from '../lib/firebase'
+import { initializeUserProfile, getCompleteProfile } from '../lib/reputationService'
 
 const AuthContext = createContext(null)
 
@@ -23,27 +24,58 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
+  const [userFullProfile, setUserFullProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
+  async function loadFullProfile(userId, role) {
+    if (!userId || !role) return
+    const full = await getCompleteProfile(userId, role)
+    setUserFullProfile(full)
+  }
+
   async function createUserDoc(firebaseUser, extra = {}) {
     const ref = doc(db, 'users', firebaseUser.uid)
     const snap = await getDoc(ref)
+    const role = extra.role ?? (snap.exists() ? snap.data().role : 'farmer')
+    const displayName = extra.displayName ?? (snap.exists() ? snap.data().displayName : (firebaseUser.displayName || ''))
+
     if (!snap.exists()) {
       await setDoc(ref, {
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? null,
         phone: firebaseUser.phoneNumber ?? null,
-        displayName: firebaseUser.displayName ?? extra.displayName ?? null,
+        displayName: displayName || null,
         photoURL: firebaseUser.photoURL ?? null,
-        role: extra.role ?? 'farmer',
+        role: role,
         createdAt: serverTimestamp(),
         ...extra,
       })
+      
+      // Initialize reputation & role sub-documents
+      await initializeUserProfile(firebaseUser.uid, role, displayName, {
+        email: firebaseUser.email,
+        phone: firebaseUser.phoneNumber,
+        ...extra
+      })
+    } else {
+      // Ensure subdocs exist (fallback for legacy or half-created accounts)
+      const repRef = doc(db, 'user_reputation', firebaseUser.uid)
+      const repSnap = await getDoc(repRef)
+      if (!repSnap.exists()) {
+        await initializeUserProfile(firebaseUser.uid, role, displayName, {
+          email: firebaseUser.email || snap.data().email,
+          phone: firebaseUser.phoneNumber || snap.data().phone,
+          ...extra
+        })
+      }
     }
+
     const updated = await getDoc(ref)
-    setUserProfile(updated.data())
+    const userData = updated.data()
+    setUserProfile(userData)
+    await loadFullProfile(firebaseUser.uid, userData.role)
   }
 
   // ── Email / Password ───────────────────────────────────────────────────────
@@ -71,34 +103,22 @@ export function AuthProvider({ children }) {
 
   // ── Phone / OTP ────────────────────────────────────────────────────────────
 
-  /**
-   * Call once to attach an invisible reCAPTCHA to the given container element id.
-   * Returns the RecaptchaVerifier instance — keep it in component state.
-   */
   function setupRecaptcha(containerId) {
     if (window.recaptchaVerifier) {
       window.recaptchaVerifier.clear()
     }
     window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
       size: 'invisible',
-      callback: () => {}, // reCAPTCHA solved — allow signInWithPhoneNumber
+      callback: () => {},
     })
     return window.recaptchaVerifier
   }
 
-  /**
-   * Step 1: send OTP.  Returns a confirmationResult.
-   * phoneNumber must include country code, e.g. "+233241234567"
-   */
   async function sendOTP(phoneNumber, recaptchaVerifier) {
     const confirmation = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier)
     return confirmation
   }
 
-  /**
-   * Step 2: verify OTP.
-   * confirmationResult comes from sendOTP(); otp is the 6-digit code.
-   */
   async function verifyOTP(confirmationResult, otp) {
     const cred = await confirmationResult.confirm(otp)
     await createUserDoc(cred.user)
@@ -110,6 +130,7 @@ export function AuthProvider({ children }) {
   async function logOut() {
     await signOut(auth)
     setUserProfile(null)
+    setUserFullProfile(null)
   }
 
   // ── Auth State Listener ────────────────────────────────────────────────────
@@ -120,10 +141,16 @@ export function AuthProvider({ children }) {
       if (user) {
         const ref = doc(db, 'users', user.uid)
         const snap = await getDoc(ref)
-        if (snap.exists()) setUserProfile(snap.data())
-        else await createUserDoc(user)
+        if (snap.exists()) {
+          const userData = snap.data()
+          setUserProfile(userData)
+          await loadFullProfile(user.uid, userData.role)
+        } else {
+          await createUserDoc(user)
+        }
       } else {
         setUserProfile(null)
+        setUserFullProfile(null)
       }
       setLoading(false)
     })
@@ -135,6 +162,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     userProfile,
+    userFullProfile,
     loading,
     signUp,
     signIn,
@@ -143,6 +171,7 @@ export function AuthProvider({ children }) {
     sendOTP,
     verifyOTP,
     logOut,
+    refreshProfile: () => currentUser && userProfile && loadFullProfile(currentUser.uid, userProfile.role)
   }
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>

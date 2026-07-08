@@ -1,8 +1,41 @@
 import React, { useState } from 'react'
 import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import ReputationCard from '../reputation/ReputationCard'
 
 export default function TransportDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('jobs')
+  const { userFullProfile } = useAuth()
+
+  const mockProfile = {
+    user: { displayName: 'Kofi Mensah' },
+    verification: {
+      phone_verified: true,
+      email_verified: true,
+      national_id_verified: true,
+      location_verified: true,
+      vehicle_verified: true
+    },
+    reputation: {
+      completed_transactions: 25,
+      successful_transactions: 24,
+      average_rating: 4.85,
+      response_rate: 0.96,
+      reputation_level: 'Trusted Member'
+    },
+    roleProfile: {
+      vehicle_type: 'Light Truck',
+      vehicle_capacity: '2 tons',
+      verification_status: 'Reliable Transporter',
+      completed_deliveries: 25,
+      average_rating: 4.85,
+      on_time_delivery_rate: 0.94,
+      joined_date: '2024-02-15T10:30:00Z'
+    }
+  }
+
+  const profile = userFullProfile || mockProfile
+  const displayName = profile.user?.displayName || 'Kofi'
 
   const tabs = [
     { id: 'jobs', label: 'Available Jobs', icon: <Truck className="w-5 h-5" /> },
@@ -53,7 +86,7 @@ export default function TransportDashboard({ onNavigate }) {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-earth-900">Transport Dashboard</h1>
-            <p className="text-sm text-earth-500">Welcome, Kofi Mensah</p>
+            <p className="text-sm text-earth-500">Welcome, {displayName}</p>
           </div>
           <button className="p-2 rounded-xl hover:bg-earth-100 transition-colors">
             <Settings className="w-6 h-6 text-earth-600" />
@@ -85,6 +118,9 @@ export default function TransportDashboard({ onNavigate }) {
       <main className="px-6 py-6 max-w-7xl mx-auto">
         {activeTab === 'jobs' && (
           <div className="space-y-6">
+            {/* Reputation Card */}
+            <ReputationCard profile={profile} role="transport" />
+
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Available Jobs" value="4" icon={<Truck />} color="terracotta" />
