@@ -1,19 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   Sparkles, Mail, Lock, Eye, EyeOff, Phone, ArrowRight,
-  ChevronLeft, Loader2, User, CheckCircle, AlertCircle,
+  ChevronLeft, Loader2, User, CheckCircle, AlertCircle, MapPin, Truck, ShoppingBag, Shield
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
+// ── Role Definitions ─────────────────────────────────────────────────────────
 const ROLES = [
-  { id: 'farmer',    label: 'Farmer',            emoji: '🌾', desc: 'List produce & track harvests' },
-  { id: 'buyer',     label: 'Buyer / Trader',     emoji: '🛒', desc: 'Browse market & place orders'  },
-  { id: 'transport', label: 'Transport Provider', emoji: '🚛', desc: 'Offer haulage services'         },
-  { id: 'admin',     label: 'Admin',              emoji: '⚙️', desc: 'Platform management'            },
+  { id: 'farmer',    label: 'Farmer',            emoji: '🌾', desc: 'List produce & track harvests', icon: <Shield className="w-5 h-5" /> },
+  { id: 'buyer',     label: 'Buyer / Trader',     emoji: '🛒', desc: 'Browse market & place orders',  icon: <ShoppingBag className="w-5 h-5" /> },
+  { id: 'transport', label: 'Transport Provider', emoji: '🚛', desc: 'Offer haulage services',         icon: <Truck className="w-5 h-5" /> },
 ]
 
+// ── Common Shared Components ─────────────────────────────────────────────────
 function ErrorBanner({ msg }) {
   if (!msg) return null
   return (
@@ -34,7 +33,6 @@ function SuccessBanner({ msg }) {
   )
 }
 
-// ── Google Button ──────────────────────────────────────────────────────────────
 function GoogleBtn({ onClick, loading }) {
   return (
     <button
@@ -42,7 +40,6 @@ function GoogleBtn({ onClick, loading }) {
       disabled={loading}
       className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white border border-earth-200 rounded-xl font-medium text-earth-800 hover:bg-earth-50 transition-all duration-200 shadow-sm disabled:opacity-50"
     >
-      {/* Google icon SVG */}
       <svg width="20" height="20" viewBox="0 0 48 48">
         <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.9 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
         <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 16.3 2 9.6 7.4 6.3 14.7z"/>
@@ -54,7 +51,6 @@ function GoogleBtn({ onClick, loading }) {
   )
 }
 
-// ── Divider ────────────────────────────────────────────────────────────────────
 function Divider({ text = 'or' }) {
   return (
     <div className="flex items-center gap-3 my-4">
@@ -65,7 +61,6 @@ function Divider({ text = 'or' }) {
   )
 }
 
-// ── Input ──────────────────────────────────────────────────────────────────────
 function Input({ icon, type = 'text', rightIcon, ...props }) {
   return (
     <div className="relative">
@@ -87,20 +82,21 @@ function Input({ icon, type = 'text', rightIcon, ...props }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MAIN AUTH PAGE
+// MAIN AUTH & REGISTRATION PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function AuthPage({ onAuthenticated }) {
-  // 'login' | 'signup' | 'phone'
+  // 'login' | 'register_role' | 'signup' | 'phone'
   const [mode, setMode] = useState('login')
+  const [selectedRole, setSelectedRole] = useState('farmer')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ivory-50 via-terracotta-50 to-forest-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background blobs */}
+      {/* Background decoration blobs */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-terracotta-400 rounded-full blur-3xl opacity-10 -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-forest-500 rounded-full blur-3xl opacity-10 translate-y-1/2 -translate-x-1/2" />
 
       <div className="relative w-full max-w-md">
-        {/* Logo */}
+        {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-terracotta-500 to-terracotta-700 rounded-2xl flex items-center justify-center shadow-lg">
@@ -111,11 +107,37 @@ export default function AuthPage({ onAuthenticated }) {
           <p className="text-earth-500 text-sm">Smart Agricultural Commerce · Volta Region</p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/60 p-8">
-          {mode === 'login'  && <LoginForm  onSwitch={setMode} onDone={onAuthenticated} />}
-          {mode === 'signup' && <SignupForm onSwitch={setMode} onDone={onAuthenticated} />}
-          {mode === 'phone'  && <PhoneForm  onSwitch={setMode} onDone={onAuthenticated} />}
+        {/* Content Box */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/60 p-8 animate-fade-in">
+          {mode === 'login' && (
+            <LoginForm onSwitch={setMode} onDone={onAuthenticated} />
+          )}
+          
+          {mode === 'register_role' && (
+            <RegisterRoleForm
+              onSelect={(role) => {
+                setSelectedRole(role)
+                setMode('signup')
+              }}
+              onSwitch={setMode}
+            />
+          )}
+
+          {mode === 'signup' && (
+            <SignupForm
+              role={selectedRole}
+              onSwitch={setMode}
+              onDone={onAuthenticated}
+            />
+          )}
+
+          {mode === 'phone' && (
+            <PhoneForm
+              role={selectedRole}
+              onSwitch={setMode}
+              onDone={onAuthenticated}
+            />
+          )}
         </div>
 
         <p className="text-center text-earth-400 text-xs mt-6">
@@ -126,7 +148,7 @@ export default function AuthPage({ onAuthenticated }) {
   )
 }
 
-// ── LOGIN ──────────────────────────────────────────────────────────────────────
+// ── LOGIN FORM ─────────────────────────────────────────────────────────────────
 function LoginForm({ onSwitch, onDone }) {
   const { signIn, signInWithGoogle } = useAuth()
   const [email, setEmail]       = useState('')
@@ -143,7 +165,7 @@ function LoginForm({ onSwitch, onDone }) {
       await signIn(email, password)
       onDone()
     } catch (err) {
-      setError(friendlyError(err.code))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -156,7 +178,7 @@ function LoginForm({ onSwitch, onDone }) {
       await signInWithGoogle()
       onDone()
     } catch (err) {
-      setError(friendlyError(err.code))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -207,55 +229,86 @@ function LoginForm({ onSwitch, onDone }) {
         </button>
       </form>
 
-      <Divider text="other options" />
+      <Divider text="new here?" />
 
       <button
-        onClick={() => onSwitch('phone')}
-        className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-earth-200 rounded-xl text-earth-700 font-medium hover:bg-earth-50 transition"
+        onClick={() => onSwitch('register_role')}
+        className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-earth-200 rounded-xl text-earth-700 font-medium hover:bg-earth-50 hover:border-terracotta-400 transition"
       >
-        <Phone className="w-4 h-4" /> Sign in with Phone (OTP)
+        Create Account (Register Role)
       </button>
 
-      <p className="text-center text-sm text-earth-500">
-        Don't have an account?{' '}
-        <button onClick={() => onSwitch('signup')} className="text-terracotta-600 font-semibold hover:underline">
-          Sign up
-        </button>
+      <p className="text-center text-sm text-earth-500 pt-2 border-t border-earth-100">
+        Sign-in issue? Reset your credentials in dashboard settings.
       </p>
     </div>
   )
 }
 
-// ── SIGN UP ────────────────────────────────────────────────────────────────────
-function SignupForm({ onSwitch, onDone }) {
+// ── REGISTRATION ROLE SELECTION SCREEN ───────────────────────────────────────────
+function RegisterRoleForm({ onSelect, onSwitch }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <button onClick={() => onSwitch('login')} className="p-1 rounded-lg hover:bg-earth-100 transition">
+          <ChevronLeft className="w-5 h-5 text-earth-600" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-earth-900">Choose Account Role</h2>
+          <p className="text-earth-500 text-sm mt-1">Select profile type to store in database</p>
+        </div>
+      </div>
+
+      <div className="grid gap-3">
+        {ROLES.map(r => (
+          <button
+            key={r.id}
+            onClick={() => onSelect(r.id)}
+            className="w-full p-4 rounded-2xl border border-earth-200 bg-white hover:border-terracotta-400 hover:bg-terracotta-50/40 text-left transition-all duration-300 flex items-center gap-4 hover:scale-[1.02] active:scale-100 shadow-sm"
+          >
+            <div className="text-3xl bg-earth-50 w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
+              {r.emoji}
+            </div>
+            <div>
+              <p className="font-bold text-earth-900 text-sm capitalize">{r.label}</p>
+              <p className="text-xs text-earth-500 mt-0.5">{r.desc}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="text-center text-sm text-earth-500 pt-4 border-t border-earth-100">
+        Already have an account?{' '}
+        <button onClick={() => onSwitch('login')} className="text-terracotta-600 font-semibold hover:underline">
+          Sign in
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── EMAIL REGISTRATION DETAILS FORM ─────────────────────────────────────────────
+function SignupForm({ role, onSwitch, onDone }) {
   const { signUp, signInWithGoogle } = useAuth()
-  const [step, setStep]           = useState(1) // 1 = details, 2 = role select
   const [name, setName]           = useState('')
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
   const [confirm, setConfirm]     = useState('')
-  const [role, setRole]           = useState('farmer')
   const [showPw, setShowPw]       = useState(false)
   const [error, setError]         = useState('')
   const [busy, setBusy]           = useState(false)
 
-  async function handleDetails(e) {
+  async function handleSignUp(e) {
     e.preventDefault()
     if (password !== confirm) { setError('Passwords do not match'); return }
     if (password.length < 6)  { setError('Password must be at least 6 characters'); return }
-    setError('')
-    setStep(2)
-  }
-
-  async function handleSignUp() {
     setBusy(true)
     setError('')
     try {
       await signUp(email, password, name, role)
       onDone()
     } catch (err) {
-      setError(friendlyError(err.code))
-      setStep(1)
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -265,10 +318,10 @@ function SignupForm({ onSwitch, onDone }) {
     setBusy(true)
     setError('')
     try {
-      await signInWithGoogle()
+      await signInWithGoogle(role)
       onDone()
     } catch (err) {
-      setError(friendlyError(err.code))
+      setError(friendlyError(err))
     } finally {
       setBusy(false)
     }
@@ -277,124 +330,82 @@ function SignupForm({ onSwitch, onDone }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        {step === 2 && (
-          <button onClick={() => setStep(1)} className="p-1 rounded-lg hover:bg-earth-100 transition">
-            <ChevronLeft className="w-5 h-5 text-earth-600" />
-          </button>
-        )}
+        <button onClick={() => onSwitch('register_role')} className="p-1 rounded-lg hover:bg-earth-100 transition">
+          <ChevronLeft className="w-5 h-5 text-earth-600" />
+        </button>
         <div>
-          <h2 className="text-2xl font-bold text-earth-900">
-            {step === 1 ? 'Create account' : 'Choose your role'}
-          </h2>
-          <p className="text-earth-500 text-sm mt-1">
-            {step === 1 ? 'Join the Nunya AI network' : 'How will you use Nunya AI?'}
-          </p>
+          <h2 className="text-2xl font-bold text-earth-900">Complete Profile</h2>
+          <p className="text-earth-500 text-sm mt-1 capitalize">Registering credentials for: {role}</p>
         </div>
       </div>
 
       <ErrorBanner msg={error} />
 
-      {step === 1 && (
-        <>
-          <GoogleBtn onClick={handleGoogle} loading={busy} />
-          <Divider />
-          <form onSubmit={handleDetails} className="space-y-4">
-            <Input
-              icon={<User className="w-4 h-4" />}
-              placeholder="Full name"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-            />
-            <Input
-              icon={<Mail className="w-4 h-4" />}
-              type="email"
-              placeholder="Email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              icon={<Lock className="w-4 h-4" />}
-              type={showPw ? 'text' : 'password'}
-              placeholder="Password (min 6 chars)"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              rightIcon={
-                showPw
-                  ? <EyeOff className="w-4 h-4" onClick={() => setShowPw(false)} />
-                  : <Eye className="w-4 h-4" onClick={() => setShowPw(true)} />
-              }
-              required
-            />
-            <Input
-              icon={<Lock className="w-4 h-4" />}
-              type={showPw ? 'text' : 'password'}
-              placeholder="Confirm password"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
-              required
-            />
-            <button
-              type="submit"
-              className="w-full py-3 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:from-terracotta-700 hover:to-terracotta-800 transition-all duration-200"
-            >
-              Next <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
+      <GoogleBtn onClick={handleGoogle} loading={busy} />
 
-          <Divider text="or" />
-          <button
-            onClick={() => onSwitch('phone')}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-earth-200 rounded-xl text-earth-700 font-medium hover:bg-earth-50 transition"
-          >
-            <Phone className="w-4 h-4" /> Sign up with Phone (OTP)
-          </button>
-        </>
-      )}
+      <Divider />
 
-      {step === 2 && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            {ROLES.map(r => (
-              <button
-                key={r.id}
-                onClick={() => setRole(r.id)}
-                className={`p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
-                  role === r.id
-                    ? 'border-terracotta-500 bg-terracotta-50'
-                    : 'border-earth-200 bg-white hover:border-terracotta-300 hover:bg-terracotta-50/40'
-                }`}
-              >
-                <div className="text-2xl mb-2">{r.emoji}</div>
-                <p className="font-semibold text-earth-900 text-sm">{r.label}</p>
-                <p className="text-xs text-earth-500 mt-0.5">{r.desc}</p>
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={handleSignUp}
-            disabled={busy}
-            className="w-full py-3 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:from-terracotta-700 hover:to-terracotta-800 transition-all duration-200 disabled:opacity-60"
-          >
-            {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Account <ArrowRight className="w-4 h-4" /></>}
-          </button>
-        </div>
-      )}
-
-      <p className="text-center text-sm text-earth-500">
-        Already have an account?{' '}
-        <button onClick={() => onSwitch('login')} className="text-terracotta-600 font-semibold hover:underline">
-          Sign in
+      <form onSubmit={handleSignUp} className="space-y-4">
+        <Input
+          icon={<User className="w-4 h-4" />}
+          placeholder="Full name"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+        />
+        <Input
+          icon={<Mail className="w-4 h-4" />}
+          type="email"
+          placeholder="Email address"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+        <Input
+          icon={<Lock className="w-4 h-4" />}
+          type={showPw ? 'text' : 'password'}
+          placeholder="Password (min 6 chars)"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          rightIcon={
+            showPw
+              ? <EyeOff className="w-4 h-4" onClick={() => setShowPw(false)} />
+              : <Eye className="w-4 h-4" onClick={() => setShowPw(true)} />
+          }
+          required
+        />
+        <Input
+          icon={<Lock className="w-4 h-4" />}
+          type={showPw ? 'text' : 'password'}
+          placeholder="Confirm password"
+          value={confirm}
+          onChange={e => setConfirm(e.target.value)}
+          required
+        />
+        
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full py-3 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:from-terracotta-700 hover:to-terracotta-800 transition-all duration-200 disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Account <ArrowRight className="w-4 h-4" /></>}
         </button>
-      </p>
+      </form>
+
+      <Divider text="or" />
+      
+      <button
+        onClick={() => onSwitch('phone')}
+        className="w-full flex items-center justify-center gap-2 py-3 border border-earth-200 rounded-xl text-earth-700 font-medium hover:bg-earth-50 transition"
+      >
+        <Phone className="w-4 h-4" /> Sign up with Phone (OTP)
+      </button>
     </div>
   )
 }
 
-// ── PHONE / OTP ────────────────────────────────────────────────────────────────
-function PhoneForm({ onSwitch, onDone }) {
+// ── PHONE REGISTRATION OTP FORM ─────────────────────────────────────────────────
+function PhoneForm({ role, onSwitch, onDone }) {
   const { setupRecaptcha, sendOTP, verifyOTP } = useAuth()
   const [step, setStep]                 = useState(1) // 1=phone entry, 2=OTP entry
   const [phone, setPhone]               = useState('+233')
@@ -406,7 +417,6 @@ function PhoneForm({ onSwitch, onDone }) {
   const [resendTimer, setResendTimer]   = useState(0)
   const otpRefs                         = useRef([])
 
-  // Countdown for resend
   useEffect(() => {
     if (resendTimer <= 0) return
     const t = setTimeout(() => setResendTimer(r => r - 1), 1000)
@@ -426,7 +436,7 @@ function PhoneForm({ onSwitch, onDone }) {
       setResendTimer(30)
       setSuccess(`OTP sent to ${phone}`)
     } catch (err) {
-      setError(friendlyError(err.code) || err.message)
+      setError(friendlyError(err))
       if (window.recaptchaVerifier) {
         window.recaptchaVerifier.clear()
         window.recaptchaVerifier = null
@@ -457,7 +467,7 @@ function PhoneForm({ onSwitch, onDone }) {
     setError('')
     setBusy(true)
     try {
-      await verifyOTP(confirmResult, code)
+      await verifyOTP(confirmResult, code, role)
       onDone()
     } catch (err) {
       setError('Incorrect code. Please try again.')
@@ -476,7 +486,7 @@ function PhoneForm({ onSwitch, onDone }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => (step === 2 ? setStep(1) : onSwitch('login'))} className="p-1 rounded-lg hover:bg-earth-100 transition">
+        <button onClick={() => (step === 2 ? setStep(1) : onSwitch('signup'))} className="p-1 rounded-lg hover:bg-earth-100 transition">
           <ChevronLeft className="w-5 h-5 text-earth-600" />
         </button>
         <div>
@@ -492,7 +502,6 @@ function PhoneForm({ onSwitch, onDone }) {
       <ErrorBanner msg={error} />
       <SuccessBanner msg={success} />
 
-      {/* Invisible reCAPTCHA anchor */}
       <div id="recaptcha-container" />
 
       {step === 1 && (
@@ -524,7 +533,6 @@ function PhoneForm({ onSwitch, onDone }) {
 
       {step === 2 && (
         <form onSubmit={handleVerifyOTP} className="space-y-6">
-          {/* 6-digit OTP boxes */}
           <div className="flex gap-3 justify-center">
             {otp.map((digit, i) => (
               <input
@@ -560,26 +568,24 @@ function PhoneForm({ onSwitch, onDone }) {
           </div>
         </form>
       )}
-
-      <p className="text-center text-sm text-earth-500">
-        Use email instead?{' '}
-        <button onClick={() => onSwitch('login')} className="text-terracotta-600 font-semibold hover:underline">
-          Sign in with email
-        </button>
-      </p>
     </div>
   )
 }
 
-// ── Error codes → friendly messages ───────────────────────────────────────────
-function friendlyError(code) {
+// ── Error Codes Mapper ────────────────────────────────────────────────────────
+function friendlyError(err) {
+  console.error("Firebase Auth Error Detail:", err)
+  const code = err?.code
   const map = {
     'auth/user-not-found':         'No account found with that email.',
     'auth/wrong-password':         'Incorrect password.',
     'auth/email-already-in-use':   'An account already exists with that email.',
     'auth/invalid-email':          'Please enter a valid email address.',
     'auth/weak-password':          'Password is too weak. Use at least 6 characters.',
-    'auth/popup-closed-by-user':   'Google sign-in was cancelled.',
+    'auth/popup-closed-by-user':   'Google sign-in popup was closed.',
+    'auth/popup-blocked':          'Popup was blocked by your browser. Please enable popups.',
+    'auth/operation-not-allowed':  'Google sign-in is not enabled in your Firebase console.',
+    'auth/unauthorized-domain':    'This domain is not authorized in your Firebase console.',
     'auth/network-request-failed': 'Network error. Check your connection and try again.',
     'auth/too-many-requests':      'Too many attempts. Please wait and try again.',
     'auth/invalid-phone-number':   'Enter a valid phone number with country code.',
@@ -587,5 +593,5 @@ function friendlyError(code) {
     'auth/code-expired':           'OTP has expired. Please request a new one.',
     'auth/captcha-check-failed':   'reCAPTCHA failed. Please try again.',
   }
-  return map[code] ?? 'Something went wrong. Please try again.'
+  return map[code] ?? `${err?.message || 'Something went wrong.'} (${code || 'unknown'})`
 }

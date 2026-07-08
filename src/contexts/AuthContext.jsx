@@ -3,6 +3,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -36,46 +38,88 @@ export function AuthProvider({ children }) {
   }
 
   async function createUserDoc(firebaseUser, extra = {}) {
-    const ref = doc(db, 'users', firebaseUser.uid)
-    const snap = await getDoc(ref)
-    const role = extra.role ?? (snap.exists() ? snap.data().role : 'farmer')
-    const displayName = extra.displayName ?? (snap.exists() ? snap.data().displayName : (firebaseUser.displayName || ''))
+    const role = extra.role || 'farmer'
+    const displayName = extra.displayName || firebaseUser.displayName || 'Demo User'
 
-    if (!snap.exists()) {
-      await setDoc(ref, {
-        uid: firebaseUser.uid,
-        email: firebaseUser.email ?? null,
-        phone: firebaseUser.phoneNumber ?? null,
-        displayName: displayName || null,
-        photoURL: firebaseUser.photoURL ?? null,
-        role: role,
-        createdAt: serverTimestamp(),
-        ...extra,
-      })
-      
-      // Initialize reputation & role sub-documents
-      await initializeUserProfile(firebaseUser.uid, role, displayName, {
-        email: firebaseUser.email,
-        phone: firebaseUser.phoneNumber,
-        ...extra
-      })
-    } else {
-      // Ensure subdocs exist (fallback for legacy or half-created accounts)
-      const repRef = doc(db, 'user_reputation', firebaseUser.uid)
-      const repSnap = await getDoc(repRef)
-      if (!repSnap.exists()) {
-        await initializeUserProfile(firebaseUser.uid, role, displayName, {
-          email: firebaseUser.email || snap.data().email,
-          phone: firebaseUser.phoneNumber || snap.data().phone,
-          ...extra
-        })
-      }
+    const fallbackUserData = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email ?? null,
+      phone: firebaseUser.phoneNumber ?? null,
+      displayName: displayName,
+      photoURL: firebaseUser.photoURL ?? null,
+      role: role,
     }
 
-    const updated = await getDoc(ref)
-    const userData = updated.data()
-    setUserProfile(userData)
-    await loadFullProfile(firebaseUser.uid, userData.role)
+    try {
+      const ref = doc(db, 'users', firebaseUser.uid)
+      const snap = await getDoc(ref)
+      const finalRole = extra.role ?? (snap.exists() ? snap.data().role : 'farmer')
+      const finalName = extra.displayName ?? (snap.exists() ? snap.data().displayName : (firebaseUser.displayName || 'Demo User'))
+
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email ?? null,
+          phone: firebaseUser.phoneNumber ?? null,
+          displayName: finalName,
+          photoURL: firebaseUser.photoURL ?? null,
+          role: finalRole,
+          createdAt: serverTimestamp(),
+          ...extra,
+        })
+        
+        // Initialize reputation & role sub-documents
+        await initializeUserProfile(firebaseUser.uid, finalRole, finalName, {
+          email: firebaseUser.email,
+          phone: firebaseUser.phoneNumber,
+          ...extra
+        })
+      } else {
+        // Ensure subdocs exist (fallback for legacy or half-created accounts)
+        const repRef = doc(db, 'user_reputation', firebaseUser.uid)
+        const repSnap = await getDoc(repRef)
+        if (!repSnap.exists()) {
+          await initializeUserProfile(firebaseUser.uid, finalRole, finalName, {
+            email: firebaseUser.email || snap.data().email,
+            phone: firebaseUser.phoneNumber || snap.data().phone,
+            ...extra
+          })
+        }
+      }
+
+      const updated = await getDoc(ref)
+      const userData = updated.data()
+      setUserProfile(userData)
+      await loadFullProfile(firebaseUser.uid, userData.role)
+    } catch (dbError) {
+      console.warn("Firestore database write failed. Falling back to local profile state.", dbError)
+      setUserProfile(fallbackUserData)
+      setUserFullProfile({
+        user: fallbackUserData,
+        verification: {
+          phone_verified: !!firebaseUser.phoneNumber,
+          email_verified: !!firebaseUser.email,
+          national_id_verified: false,
+          location_verified: true,
+        },
+        reputation: {
+          completed_transactions: 0,
+          successful_transactions: 0,
+          average_rating: 5.0,
+          response_rate: 1.0,
+          reputation_level: 'New Member'
+        },
+        roleProfile: {
+          farm_name: role === 'farmer' ? `${displayName}'s Farm` : undefined,
+          business_name: role === 'buyer' ? `${displayName} Enterprises` : undefined,
+          verification_status: role === 'farmer' ? 'New Farmer' : role === 'buyer' ? 'New Buyer' : 'New Transporter',
+          completed_orders: 0,
+          average_rating: 5.0,
+          response_rate: 1.0,
+          joined_date: new Date().toISOString()
+        }
+      })
+    }
   }
 
   // ── Email / Password ───────────────────────────────────────────────────────
@@ -95,10 +139,28 @@ export function AuthProvider({ children }) {
 
   // ── Google ─────────────────────────────────────────────────────────────────
 
-  async function signInWithGoogle() {
-    const cred = await signInWithPopup(auth, googleProvider)
-    await createUserDoc(cred.user)
-    return cred
+  async function signInWithGoogle(role = 'farmer') {
+    // Store chosen role in localStorage so we can retrieve it after redirect completes
+    localStorage.setItem('agro_registration_role', role)
+    try {
+      const cred = await signInWithPopup(auth, googleProvider)
+      await createUserDoc(cred.user, { role })
+      return cred
+    } catch (err) {
+      // Fallback to redirect if popup fails or gets blocked due to browser COOP policies
+      const isPopupBlocked = 
+        err.code === 'auth/popup-blocked' || 
+        err.code === 'auth/popup-closed-by-user' || 
+        err.code === 'auth/cancelled-popup-request' ||
+        err.message?.includes('Cross-Origin-Opener-Policy')
+        
+      if (isPopupBlocked) {
+        console.warn("Google Sign-In Popup blocked or failed. Attempting Redirect fallback...")
+        await signInWithRedirect(auth, googleProvider)
+      } else {
+        throw err
+      }
+    }
   }
 
   // ── Phone / OTP ────────────────────────────────────────────────────────────
@@ -119,9 +181,9 @@ export function AuthProvider({ children }) {
     return confirmation
   }
 
-  async function verifyOTP(confirmationResult, otp) {
+  async function verifyOTP(confirmationResult, otp, role = 'farmer') {
     const cred = await confirmationResult.confirm(otp)
-    await createUserDoc(cred.user)
+    await createUserDoc(cred.user, { role })
     return cred
   }
 
@@ -133,9 +195,22 @@ export function AuthProvider({ children }) {
     setUserFullProfile(null)
   }
 
-  // ── Auth State Listener ────────────────────────────────────────────────────
+  // ── Auth State Listener & Redirect handler ─────────────────────────────────
 
   useEffect(() => {
+    // 1. Process Google Sign-in redirect results on load
+    getRedirectResult(auth)
+      .then(async (cred) => {
+        if (cred) {
+          const savedRole = localStorage.getItem('agro_registration_role') || 'farmer'
+          await createUserDoc(cred.user, { role: savedRole })
+        }
+      })
+      .catch((err) => {
+        console.error("Firebase Redirect Sign-in result error:", err)
+      })
+
+    // 2. Listen to state changes
     const unsub = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user)
       if (user) {
