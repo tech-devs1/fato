@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
+<<<<<<< HEAD
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+=======
+>>>>>>> 81cae66 (integrated mapbox for routes)
 import LandingPage from './components/LandingPage'
 import AuthPage from './components/auth/AuthPage'
 import HomeScreen from './components/HomeScreen'
@@ -8,6 +11,7 @@ import BuyerDashboard from './components/dashboards/BuyerDashboard'
 import TransportDashboard from './components/dashboards/TransportDashboard'
 import AdminDashboard from './components/dashboards/AdminDashboard'
 
+<<<<<<< HEAD
 // Role → default view mapping
 const ROLE_HOME = {
   farmer:    'farmer',
@@ -15,6 +19,11 @@ const ROLE_HOME = {
   transport: 'transport',
   admin:     'admin',
 }
+=======
+function App() {
+  const [showLanding, setShowLanding] = useState(true)
+  const [currentView, setCurrentView] = useState('home')
+>>>>>>> 81cae66 (integrated mapbox for routes)
 
 // ── Inner app — has access to auth context ─────────────────────────────────────
 function AppInner() {
@@ -47,12 +56,15 @@ function AppInner() {
     setCurrentView(view)
   }
 
+<<<<<<< HEAD
   const handleLogout = () => {
     setCurrentView(null)
     setShowLanding(true)
   }
 
   // ── 1. Landing page ──────────────────────────────────────────────────────────
+=======
+>>>>>>> 81cae66 (integrated mapbox for routes)
   if (showLanding) {
     return <LandingPage onContinue={handleContinue} />
   }

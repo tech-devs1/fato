@@ -12,8 +12,13 @@
   "dependencies": {
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",
+<<<<<<< HEAD
     "firebase": "^12.15.0",
     "lucide-react": "^0.344.0",
+=======
+    "lucide-react": "^0.344.0",
+    "mapbox-gl": "^3.26.0",
+>>>>>>> 81cae66 (integrated mapbox for routes)
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.22.0",

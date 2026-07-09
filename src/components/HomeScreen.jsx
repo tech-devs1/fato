@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { MapPin, Activity, TrendingUp, Truck, Sprout, Bell, Search, User, ChevronRight, Sparkles, AlertCircle, CheckCircle } from 'lucide-react'
+import MapboxView from './MapboxView'
 
 export default function HomeScreen({ onNavigate }) {
   const [selectedRegion, setSelectedRegion] = useState('volta')
@@ -82,61 +83,20 @@ export default function HomeScreen({ onNavigate }) {
           
           <div className="glass-lg rounded-3xl p-6">
             {/* Interactive Map Visualization */}
-            <div className="relative h-64 md:h-80 bg-gradient-to-br from-forest-100 to-terracotta-100 rounded-2xl overflow-hidden mb-4">
-              {/* Map Grid Pattern */}
-              <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#C05621" strokeWidth="0.5"/>
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid)" />
-              </svg>
-
-              {/* Region Markers */}
-              {regions.map((region, index) => (
-                <button
-                  key={region.id}
-                  onClick={() => setSelectedRegion(region.id)}
-                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                    selectedRegion === region.id ? 'scale-125 z-10' : 'scale-100'
-                  }`}
-                  style={{
-                    left: `${20 + index * 20}%`,
-                    top: `${30 + (index % 3) * 20}%`,
-                  }}
-                >
-                  <div className={`relative group`}>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      selectedRegion === region.id 
-                        ? 'bg-gradient-to-br from-terracotta-500 to-terracotta-700' 
-                        : 'bg-white shadow-lg'
-                    }`}>
-                      <MapPin className={`w-6 h-6 ${
-                        selectedRegion === region.id ? 'text-white' : 'text-terracotta-600'
-                      }`} />
-                    </div>
-                    <div className={`absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium ${
-                      selectedRegion === region.id 
-                        ? 'bg-terracotta-600 text-white' 
-                        : 'bg-white text-earth-700 shadow-md'
-                    }`}>
-                      {region.name}
-                    </div>
-                    {/* Pulse Effect */}
-                    {selectedRegion === region.id && (
-                      <div className="absolute inset-0 rounded-full bg-terracotta-500 animate-ping opacity-75" />
-                    )}
-                  </div>
-                </button>
-              ))}
-
-              {/* Connection Lines */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                <line x1="20%" y1="30%" x2="40%" y2="50%" stroke="#C05621" strokeWidth="2" strokeDasharray="5,5" opacity="0.4" />
-                <line x1="40%" y1="50%" x2="60%" y2="30%" stroke="#C05621" strokeWidth="2" strokeDasharray="5,5" opacity="0.4" />
-                <line x1="60%" y1="30%" x2="80%" y2="50%" stroke="#C05621" strokeWidth="2" strokeDasharray="5,5" opacity="0.4" />
-              </svg>
+            <div className="relative h-80 md:h-[400px] bg-white rounded-2xl overflow-hidden mb-6 border border-earth-200 shadow-inner">
+              <MapboxView
+                startLocation={selectedRegion === 'volta' ? '' : selectedRegion}
+                showActiveRoutes={true}
+                markers={regions.filter(r => r.id !== 'volta').map(region => ({
+                  id: region.id,
+                  position: region.id,
+                  label: region.name,
+                  produce: region.produce,
+                  demand: region.demand,
+                  type: 'supply'
+                }))}
+                className="h-full w-full"
+              />
             </div>
 
             {/* Region Stats */}

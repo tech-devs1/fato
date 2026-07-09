@@ -1,11 +1,17 @@
 import React, { useState } from 'react'
+<<<<<<< HEAD
 import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle, LogOut } from 'lucide-react'
 import { rankListings } from '../../lib/reputationService'
 import VerificationBadge from '../reputation/VerificationBadge'
 import { useAuth } from '../../contexts/AuthContext'
+=======
+import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle, Navigation } from 'lucide-react'
+import MapboxView, { VOLTA_COORDINATES } from '../MapboxView'
+>>>>>>> 81cae66 (integrated mapbox for routes)
 
 export default function BuyerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('marketplace')
+<<<<<<< HEAD
   const { userProfile, logOut } = useAuth()
 
   const displayName = userProfile?.displayName || 'Buyer'
@@ -14,6 +20,9 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
     await logOut()
     if (onLogout) onLogout()
   }
+=======
+  const [selectedDelivery, setSelectedDelivery] = useState(null)
+>>>>>>> 81cae66 (integrated mapbox for routes)
 
   const tabs = [
     { id: 'marketplace', label: 'Marketplace', icon: <ShoppingBag className="w-5 h-5" /> },
@@ -166,9 +175,68 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Delivery Tracking</h2>
             
-            <div className="grid gap-4">
+            {selectedDelivery ? (
+              <div className="glass rounded-3xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-earth-900 text-lg flex items-center gap-2">
+                      <Navigation className="w-5 h-5 text-terracotta-600 animate-pulse" />
+                      <span>Live Tracker - Order {selectedDelivery.order}</span>
+                    </h3>
+                    <p className="text-xs text-earth-500">
+                      Route: {selectedDelivery.from} to {selectedDelivery.to} • Driver: {selectedDelivery.driver}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedDelivery(null)}
+                    className="px-4 py-2 bg-earth-100 hover:bg-earth-200 text-earth-800 rounded-xl font-semibold text-xs transition-colors"
+                  >
+                    Clear Map
+                  </button>
+                </div>
+
+                <div className="h-[320px] min-h-[320px] rounded-2xl overflow-hidden border border-earth-200 shadow-inner">
+                  <MapboxView
+                    startLocation={selectedDelivery.from}
+                    endLocation={selectedDelivery.to}
+                    markers={(() => {
+                      const fromKey = selectedDelivery.from.toLowerCase()
+                      const toKey = selectedDelivery.to.toLowerCase()
+                      const fromCoords = VOLTA_COORDINATES[fromKey]
+                      const toCoords = VOLTA_COORDINATES[toKey]
+                      if (fromCoords && toCoords) {
+                        const frac = selectedDelivery.progress / 100
+                        const interpolatedLng = fromCoords[0] + (toCoords[0] - fromCoords[0]) * frac
+                        const interpolatedLat = fromCoords[1] + (toCoords[1] - fromCoords[1]) * frac
+                        return [{
+                          id: 'truck-marker',
+                          position: [interpolatedLng, interpolatedLat],
+                          label: `🚚 Cargo: ${selectedDelivery.driver}`,
+                          produce: 200,
+                          demand: 0,
+                          type: 'truck'
+                        }]
+                      }
+                      return []
+                    })()}
+                    className="h-full w-full"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="glass p-6 rounded-2xl text-center border border-earth-200/50 bg-earth-50">
+                <p className="text-sm text-earth-600">Select any delivery card below to start live map tracking.</p>
+              </div>
+            )}
+            
+            <div className="grid gap-4 md:grid-cols-2">
               {deliveries.map((delivery) => (
-                <DeliveryCard key={delivery.id} delivery={delivery} />
+                <DeliveryCard 
+                  key={delivery.id} 
+                  delivery={delivery} 
+                  isSelected={selectedDelivery?.id === delivery.id}
+                  onSelect={() => setSelectedDelivery(delivery)}
+                />
               ))}
             </div>
           </div>
@@ -355,7 +423,7 @@ function SupplierCard({ supplier }) {
   )
 }
 
-function DeliveryCard({ delivery }) {
+function DeliveryCard({ delivery, isSelected, onSelect }) {
   const statusColors = {
     preparing: 'bg-gold-100 text-gold-700',
     in_transit: 'bg-terracotta-100 text-terracotta-700',
@@ -363,7 +431,12 @@ function DeliveryCard({ delivery }) {
   }
 
   return (
-    <div className="glass rounded-2xl p-6 hover:scale-[1.02] transition-transform duration-300">
+    <div 
+      onClick={onSelect}
+      className={`glass rounded-2xl p-6 cursor-pointer hover:scale-[1.02] transition-all duration-300 ${
+        isSelected ? 'ring-2 ring-terracotta-500 border-transparent shadow-lg bg-terracotta-50/20' : ''
+      }`}
+    >
       <div className="flex items-start justify-between mb-4">
         <div>
           <p className="text-sm text-earth-500 mb-1">Order {delivery.order}</p>
