@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import LoadingScreen from './components/LoadingScreen'
 import LandingPage from './components/LandingPage'
 import HomeScreen from './components/HomeScreen'
 import FarmerDashboard from './components/dashboards/FarmerDashboard'
@@ -8,7 +7,6 @@ import TransportDashboard from './components/dashboards/TransportDashboard'
 import AdminDashboard from './components/dashboards/AdminDashboard'
 
 function App() {
-  const [loading, setLoading] = useState(true)
   const [showLanding, setShowLanding] = useState(true)
   const [currentView, setCurrentView] = useState('home')
 
@@ -19,10 +17,6 @@ function App() {
 
   const handleNavigate = (view) => {
     setCurrentView(view)
-  }
-
-  if (loading) {
-    return <LoadingScreen onComplete={() => setLoading(false)} />
   }
 
   if (showLanding) {

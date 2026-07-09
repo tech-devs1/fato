@@ -1,8 +1,12 @@
 import React, { useState } from 'react'
-import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets } from 'lucide-react'
+import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets, Navigation } from 'lucide-react'
+import MapboxView from '../MapboxView'
 
 export default function FarmerDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview')
+  const [startLoc, setStartLoc] = useState('ho')
+  const [endLoc, setEndLoc] = useState('keta')
+  const [routeInfo, setRouteInfo] = useState(null)
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <Sprout className="w-5 h-5" /> },
@@ -144,13 +148,85 @@ export default function FarmerDashboard({ onNavigate }) {
         {activeTab === 'transport' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-earth-900">Transport Requests</h2>
+              <h2 className="text-2xl font-bold text-earth-900">Transport & Cost Estimator</h2>
               <button className="flex items-center gap-2 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
                 <Plus className="w-5 h-5" />
                 <span>New Request</span>
               </button>
             </div>
 
+            {/* Map & Pricing Estimator Card */}
+            <div className="glass rounded-3xl p-6 grid lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                <h3 className="text-lg font-bold text-earth-900 flex items-center gap-2">
+                  <Navigation className="w-5 h-5 text-terracotta-600 animate-pulse" />
+                  <span>Cost Calculator</span>
+                </h3>
+                <p className="text-xs text-earth-500">
+                  Select your pickup and delivery hubs to get a live dynamic quote based on actual Mapbox driving distance.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-semibold text-earth-500 mb-1.5">Pickup Hub</label>
+                  <select 
+                    value={startLoc} 
+                    onChange={(e) => setStartLoc(e.target.value)}
+                    className="w-full px-4 py-3 bg-earth-50 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-earth-800 font-medium"
+                  >
+                    <option value="ho">Ho (Hub)</option>
+                    <option value="keta">Keta (Coast)</option>
+                    <option value="anloga">Anloga (Farming)</option>
+                    <option value="sogakope">Sogakope (Transit)</option>
+                    <option value="accra">Accra (Capital)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-earth-500 mb-1.5">Delivery Hub</label>
+                  <select 
+                    value={endLoc} 
+                    onChange={(e) => setEndLoc(e.target.value)}
+                    className="w-full px-4 py-3 bg-earth-50 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-earth-800 font-medium"
+                  >
+                    <option value="keta">Keta (Coast)</option>
+                    <option value="ho">Ho (Hub)</option>
+                    <option value="anloga">Anloga (Farming)</option>
+                    <option value="sogakope">Sogakope (Transit)</option>
+                    <option value="accra">Accra (Capital)</option>
+                  </select>
+                </div>
+
+                {routeInfo && (
+                  <div className="p-4 bg-forest-50 border border-forest-100 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-forest-700 uppercase tracking-wider">Dynamic Shipping Quote</span>
+                      <span className="text-[10px] bg-forest-100 text-forest-700 font-semibold px-2 py-0.5 rounded-full">Guaranteed</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-earth-900 text-xs">
+                      <div>Distance: <span className="font-bold">{routeInfo.distance}</span></div>
+                      <div>Duration: <span className="font-bold">{routeInfo.duration}</span></div>
+                    </div>
+                    <div className="pt-2 border-t border-forest-100/50 flex justify-between items-end">
+                      <span className="text-xs text-earth-500 font-medium">Estimated Delivery Fee:</span>
+                      <span className="text-xl font-bold text-terracotta-600">
+                        ₵{(10 + routeInfo.distanceValue * 2.5).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="lg:col-span-3 h-[300px] min-h-[300px] rounded-2xl overflow-hidden border border-earth-200 shadow-inner">
+                <MapboxView
+                  startLocation={startLoc}
+                  endLocation={endLoc}
+                  onRouteCalculated={(info) => setRouteInfo(info)}
+                  className="h-full w-full"
+                />
+              </div>
+            </div>
+
+            <h3 className="text-xl font-bold text-earth-900 pt-4">Recent Transport Logs</h3>
             <div className="grid gap-4">
               {transportRequests.map((request) => (
                 <TransportCard key={request.id} request={request} />

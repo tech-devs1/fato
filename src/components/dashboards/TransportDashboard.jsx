@@ -1,8 +1,13 @@
 import React, { useState } from 'react'
-import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation } from 'lucide-react'
+import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation, ShoppingBag, X } from 'lucide-react'
+import MapboxView from '../MapboxView'
 
 export default function TransportDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('jobs')
+  const [startLoc, setStartLoc] = useState('ho')
+  const [endLoc, setEndLoc] = useState('keta')
+  const [activeNavigationJob, setActiveNavigationJob] = useState(null)
+  const [customRouteInfo, setCustomRouteInfo] = useState(null)
 
   const tabs = [
     { id: 'jobs', label: 'Available Jobs', icon: <Truck className="w-5 h-5" /> },
@@ -96,7 +101,7 @@ export default function TransportDashboard({ onNavigate }) {
             {/* Available Jobs */}
             <div className="space-y-4">
               {availableJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
+                <JobCard key={job.id} job={job} onNavigateRoute={(j) => setActiveNavigationJob(j)} />
               ))}
             </div>
           </div>
@@ -116,11 +121,74 @@ export default function TransportDashboard({ onNavigate }) {
 
         {activeTab === 'routes' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-earth-900">Recommended Routes</h2>
+            <h2 className="text-2xl font-bold text-earth-900">Interactive Route Calculator</h2>
+            
+            {/* Interactive Search UI */}
+            <div className="glass rounded-3xl p-6 grid lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-earth-500 mb-1.5">Start Location</label>
+                  <select 
+                    value={startLoc} 
+                    onChange={(e) => setStartLoc(e.target.value)}
+                    className="w-full px-4 py-3 bg-earth-50 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-earth-800 font-medium"
+                  >
+                    <option value="ho">Ho (Hub)</option>
+                    <option value="keta">Keta (Coast)</option>
+                    <option value="anloga">Anloga (Farming)</option>
+                    <option value="sogakope">Sogakope (Transit)</option>
+                    <option value="accra">Accra (Capital)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-earth-500 mb-1.5">Destination</label>
+                  <select 
+                    value={endLoc} 
+                    onChange={(e) => setEndLoc(e.target.value)}
+                    className="w-full px-4 py-3 bg-earth-50 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-earth-800 font-medium"
+                  >
+                    <option value="keta">Keta (Coast)</option>
+                    <option value="ho">Ho (Hub)</option>
+                    <option value="anloga">Anloga (Farming)</option>
+                    <option value="sogakope">Sogakope (Transit)</option>
+                    <option value="accra">Accra (Capital)</option>
+                  </select>
+                </div>
+                {customRouteInfo && (
+                  <div className="p-4 bg-terracotta-50 rounded-xl border border-terracotta-100/50 space-y-2">
+                    <p className="text-xs text-terracotta-600 font-semibold uppercase tracking-wider">Dynamic Mapbox Stats</p>
+                    <div className="grid grid-cols-2 gap-2 text-earth-900 text-sm">
+                      <div>Distance: <span className="font-bold">{customRouteInfo.distance}</span></div>
+                      <div>ETA: <span className="font-bold text-forest-600">{customRouteInfo.duration}</span></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="lg:col-span-3 h-[300px] min-h-[300px] rounded-2xl overflow-hidden border border-earth-200 shadow-inner">
+                <MapboxView
+                  startLocation={startLoc}
+                  endLocation={endLoc}
+                  onRouteCalculated={(info) => setCustomRouteInfo(info)}
+                  className="h-full w-full"
+                />
+              </div>
+            </div>
+
+            <h2 className="text-xl font-bold text-earth-900 pt-4">Recommended Pre-set Routes</h2>
             
             <div className="space-y-4">
               {routes.map((route) => (
-                <RouteCard key={route.id} route={route} />
+                <RouteCard 
+                  key={route.id} 
+                  route={route} 
+                  onSelect={(r) => {
+                    const parts = r.name.toLowerCase().split('-');
+                    const s = parts[0]?.trim();
+                    const e = parts[1]?.trim().split(' ')[0];
+                    if (s) setStartLoc(s);
+                    if (e) setEndLoc(e);
+                  }}
+                />
               ))}
             </div>
           </div>
@@ -163,6 +231,41 @@ export default function TransportDashboard({ onNavigate }) {
           <NavItem icon={<Settings className="w-6 h-6" />} label="Profile" onClick={() => onNavigate('farmer')} />
         </div>
       </nav>
+
+      {/* Navigation Modal overlay */}
+      {activeNavigationJob && (
+        <div className="fixed inset-0 bg-earth-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="glass-lg w-full max-w-4xl h-[80vh] rounded-3xl overflow-hidden flex flex-col relative animate-scale-in">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-earth-100 flex items-center justify-between bg-white">
+              <div>
+                <h3 className="font-bold text-earth-900 text-lg flex items-center gap-2">
+                  <Navigation className="w-5 h-5 text-terracotta-600 animate-pulse" />
+                  <span>Navigating Cargo Shipment</span>
+                </h3>
+                <p className="text-xs text-earth-500">
+                  Route: {activeNavigationJob.from} → {activeNavigationJob.to} • Cargo: {activeNavigationJob.cargo} • Payment: {activeNavigationJob.payment}
+                </p>
+              </div>
+              <button 
+                onClick={() => setActiveNavigationJob(null)}
+                className="p-2 rounded-xl hover:bg-earth-100 transition-colors"
+              >
+                <X className="w-6 h-6 text-earth-600" />
+              </button>
+            </div>
+            
+            {/* Modal Map Body */}
+            <div className="flex-1 relative">
+              <MapboxView
+                startLocation={activeNavigationJob.from}
+                endLocation={activeNavigationJob.to}
+                className="h-full w-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -186,7 +289,7 @@ function StatCard({ label, value, icon, color }) {
   )
 }
 
-function JobCard({ job }) {
+function JobCard({ job, onNavigateRoute }) {
   const urgencyColors = {
     high: 'bg-sunset-100 text-sunset-700',
     medium: 'bg-gold-100 text-gold-700',
@@ -230,10 +333,19 @@ function JobCard({ job }) {
         </div>
       </div>
 
-      <button className="w-full px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2">
-        <CheckCircle className="w-5 h-5" />
-        <span>Accept Job</span>
-      </button>
+      <div className="flex gap-2">
+        <button 
+          onClick={() => onNavigateRoute(job)}
+          className="flex-1 px-4 py-3 bg-white border border-earth-200 text-earth-800 rounded-xl font-medium hover:bg-earth-50 transition-colors flex items-center justify-center gap-2"
+        >
+          <Navigation className="w-5 h-5 text-terracotta-600" />
+          <span>View Route</span>
+        </button>
+        <button className="flex-1 px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2">
+          <CheckCircle className="w-5 h-5" />
+          <span>Accept Job</span>
+        </button>
+      </div>
     </div>
   )
 }
@@ -292,7 +404,7 @@ function DeliveryCard({ delivery }) {
   )
 }
 
-function RouteCard({ route }) {
+function RouteCard({ route, onSelect }) {
   const conditionColors = {
     good: 'bg-forest-100 text-forest-700',
     fair: 'bg-gold-100 text-gold-700',
@@ -330,7 +442,10 @@ function RouteCard({ route }) {
             <span className="text-sm font-medium text-earth-900">{route.popularity}%</span>
           </div>
         </div>
-        <button className="px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center gap-2">
+        <button 
+          onClick={() => onSelect && onSelect(route)}
+          className="px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center gap-2"
+        >
           <Navigation className="w-4 h-4" />
           <span>Navigate</span>
         </button>
