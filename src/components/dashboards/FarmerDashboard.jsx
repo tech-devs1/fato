@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets, Navigation } from 'lucide-react'
+import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets, Navigation, X } from 'lucide-react'
 import MapboxView from '../MapboxView'
 
 export default function FarmerDashboard({ onNavigate }) {
@@ -16,12 +16,39 @@ export default function FarmerDashboard({ onNavigate }) {
     { id: 'insights', label: 'Insights', icon: <TrendingUp className="w-5 h-5" /> },
     { id: 'health', label: 'Post-Harvest', icon: <Heart className="w-5 h-5" /> },
   ]
-
-  const myProduce = [
+  
+  const [produceList, setProduceList] = useState([
     { id: 1, name: 'Cassava', quantity: '500 kg', price: '₵2.50/kg', freshness: 95, status: 'listed', location: 'Ho' },
     { id: 2, name: 'Tomatoes', quantity: '300 kg', price: '₵4.20/kg', freshness: 88, status: 'listed', location: 'Ho' },
     { id: 3, name: 'Maize', quantity: '750 kg', price: '₵3.10/kg', freshness: 92, status: 'pending', location: 'Anloga' },
-  ]
+  ])
+
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newProduce, setNewProduce] = useState({
+    name: 'Cassava',
+    quantity: '',
+    price: '',
+    location: 'Ho',
+    freshness: 95
+  })
+
+  const handleAddProduce = () => {
+    if (!newProduce.quantity || !newProduce.price) return
+    const id = Date.now()
+    const entry = {
+      id,
+      name: newProduce.name,
+      quantity: `${newProduce.quantity} kg`,
+      price: `₵${newProduce.price}/kg`,
+      freshness: newProduce.freshness,
+      status: 'listed',
+      location: newProduce.location,
+    }
+    setProduceList(prev => [entry, ...prev])
+    setNewProduce({ name: 'Cassava', quantity: '', price: '', location: 'Ho', freshness: 95 })
+    setShowAddModal(false)
+    setActiveTab('produce')
+  }
 
   const orders = [
     { id: 2847, buyer: 'Keta Market Co.', items: 'Cassava 200kg', amount: '₵500', status: 'confirmed', date: 'Today' },
@@ -89,7 +116,7 @@ export default function FarmerDashboard({ onNavigate }) {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <QuickAction icon={<Plus />} label="Add Produce" color="terracotta" />
+              <QuickAction icon={<Plus />} label="Add Produce" color="terracotta" onClick={() => setShowAddModal(true)} />
               <QuickAction icon={<Truck />} label="Request Transport" color="forest" />
               <QuickAction icon={<Search />} label="Find Buyers" color="gold" />
               <QuickAction icon={<TrendingUp />} label="View Prices" color="earth" />
@@ -111,14 +138,14 @@ export default function FarmerDashboard({ onNavigate }) {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-earth-900">My Produce</h2>
-              <button className="flex items-center gap-2 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
+              <button onClick={() => setShowAddModal(true)} className="flex items-center gap-2 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
                 <Plus className="w-5 h-5" />
                 <span>Add Produce</span>
               </button>
             </div>
 
             <div className="grid gap-4">
-              {myProduce.map((produce) => (
+              {produceList.map((produce) => (
                 <ProduceCard key={produce.id} produce={produce} />
               ))}
             </div>
@@ -281,6 +308,121 @@ export default function FarmerDashboard({ onNavigate }) {
           <NavItem icon={<Settings className="w-6 h-6" />} label="Profile" active />
         </div>
       </nav>
+
+      {/* Add Produce Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backdropFilter: 'blur(16px)', background: 'rgba(30,20,10,0.55)' }}>
+          <div className="glass rounded-3xl p-8 w-full max-w-md shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.25)' }}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-earth-900">List New Produce</h2>
+                <p className="text-sm text-earth-500 mt-0.5">Add your harvest to the marketplace</p>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="w-10 h-10 rounded-xl bg-earth-100 hover:bg-earth-200 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-earth-600" />
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-4">
+              {/* Crop Name */}
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1.5">Crop</label>
+                <select
+                  value={newProduce.name}
+                  onChange={e => setNewProduce(p => ({ ...p, name: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl bg-white/70 border border-earth-200 text-earth-900 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 transition"
+                >
+                  {['Cassava', 'Tomatoes', 'Maize', 'Yam', 'Plantain', 'Pepper', 'Groundnuts', 'Okra'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Quantity & Price row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-earth-700 mb-1.5">Quantity (kg)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 300"
+                    value={newProduce.quantity}
+                    onChange={e => setNewProduce(p => ({ ...p, quantity: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-white/70 border border-earth-200 text-earth-900 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 transition placeholder:text-earth-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-earth-700 mb-1.5">Price (₵/kg)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 4.20"
+                    value={newProduce.price}
+                    onChange={e => setNewProduce(p => ({ ...p, price: e.target.value }))}
+                    className="w-full px-4 py-3 rounded-xl bg-white/70 border border-earth-200 text-earth-900 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 transition placeholder:text-earth-400"
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-medium text-earth-700 mb-1.5">Hub Location</label>
+                <select
+                  value={newProduce.location}
+                  onChange={e => setNewProduce(p => ({ ...p, location: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl bg-white/70 border border-earth-200 text-earth-900 font-medium focus:outline-none focus:ring-2 focus:ring-terracotta-400 transition"
+                >
+                  {['Ho', 'Anloga', 'Keta', 'Hohoe', 'Kpando', 'Akatsi'].map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Freshness slider */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-earth-700">Freshness</label>
+                  <span className="text-sm font-bold text-forest-600">{newProduce.freshness}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="60"
+                  max="100"
+                  value={newProduce.freshness}
+                  onChange={e => setNewProduce(p => ({ ...p, freshness: Number(e.target.value) }))}
+                  className="w-full accent-terracotta-500"
+                />
+                <div className="flex justify-between text-xs text-earth-400 mt-1">
+                  <span>60%</span><span>80%</span><span>100%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-8">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-earth-200 text-earth-600 font-medium hover:bg-earth-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddProduce}
+                disabled={!newProduce.quantity || !newProduce.price}
+                className="flex-1 px-4 py-3 rounded-xl bg-terracotta-600 text-white font-semibold hover:bg-terracotta-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-terracotta-200"
+              >
+                List Produce
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -307,7 +449,7 @@ function StatCard({ label, value, change, icon, color }) {
   )
 }
 
-function QuickAction({ icon, label, color }) {
+function QuickAction({ icon, label, color, onClick }) {
   const colorClasses = {
     terracotta: 'bg-terracotta-50 text-terracotta-600 hover:bg-terracotta-100',
     forest: 'bg-forest-50 text-forest-600 hover:bg-forest-100',
@@ -316,7 +458,7 @@ function QuickAction({ icon, label, color }) {
   }
 
   return (
-    <button className={`glass rounded-2xl p-6 flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 ${colorClasses[color]}`}>
+    <button onClick={onClick} className={`glass rounded-2xl p-6 flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 ${colorClasses[color]}`}>
       {icon}
       <span className="font-medium">{label}</span>
     </button>
