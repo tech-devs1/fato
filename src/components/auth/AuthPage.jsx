@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import {
   Sparkles, Mail, Lock, Eye, EyeOff, Phone, ArrowRight,
   ChevronLeft, Loader2, User, CheckCircle, AlertCircle, MapPin, Truck, ShoppingBag, Shield,
-  FileText, Upload, CreditCard
+  FileText, Upload, CreditCard, Navigation, Route, DollarSign
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -11,6 +11,13 @@ const ROLES = [
   { id: 'farmer',    label: 'Farmer',            emoji: '🌾', desc: 'List produce & track harvests', icon: <Shield className="w-5 h-5" /> },
   { id: 'buyer',     label: 'Buyer / Trader',     emoji: '🛒', desc: 'Browse market & place orders',  icon: <ShoppingBag className="w-5 h-5" /> },
   { id: 'transport', label: 'Transport Provider', emoji: '🚛', desc: 'Offer haulage services',         icon: <Truck className="w-5 h-5" /> },
+]
+
+const TRANSPORT_TABS = [
+  { id: 'jobs', label: 'Available Jobs', icon: <Truck className="w-5 h-5" /> },
+  { id: 'deliveries', label: 'Deliveries', icon: <Navigation className="w-5 h-5" /> },
+  { id: 'routes', label: 'Routes', icon: <Route className="w-5 h-5" /> },
+  { id: 'revenue', label: 'Revenue', icon: <DollarSign className="w-5 h-5" /> },
 ]
 
 // ── Common Shared Components ─────────────────────────────────────────────────
@@ -82,22 +89,16 @@ function Input({ icon, type = 'text', rightIcon, ...props }) {
   )
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN AUTH & REGISTRATION PAGE
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function AuthPage({ onAuthenticated }) {
-  // 'login' | 'register_role' | 'signup' | 'phone'
   const [mode, setMode] = useState('login')
   const [selectedRole, setSelectedRole] = useState('farmer')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ivory-50 via-terracotta-50 to-forest-50 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decoration blobs */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-terracotta-400 rounded-full blur-3xl opacity-10 -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-forest-500 rounded-full blur-3xl opacity-10 translate-y-1/2 -translate-x-1/2" />
 
       <div className="relative w-full max-w-md">
-        {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-terracotta-500 to-terracotta-700 rounded-2xl flex items-center justify-center shadow-lg">
@@ -108,7 +109,6 @@ export default function AuthPage({ onAuthenticated }) {
           <p className="text-earth-500 text-sm">Smart Agricultural Commerce · Volta Region</p>
         </div>
 
-        {/* Content Box */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/60 p-8 animate-fade-in">
           {mode === 'login' && (
             <LoginForm onSwitch={setMode} onDone={onAuthenticated} />
@@ -153,7 +153,6 @@ export default function AuthPage({ onAuthenticated }) {
   )
 }
 
-// ── LOGIN FORM ─────────────────────────────────────────────────────────────────
 function LoginForm({ onSwitch, onDone }) {
   const { signIn, signInWithGoogle } = useAuth()
   const [email, setEmail]       = useState('')
@@ -161,6 +160,7 @@ function LoginForm({ onSwitch, onDone }) {
   const [showPw, setShowPw]     = useState(false)
   const [error, setError]       = useState('')
   const [busy, setBusy]         = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
 
   async function handleEmail(e) {
     e.preventDefault()
@@ -170,7 +170,17 @@ function LoginForm({ onSwitch, onDone }) {
       await signIn(email, password)
       onDone()
     } catch (err) {
-      setError(friendlyError(err))
+      const code = err?.code
+      // If the email is not registered, auto-redirect to registration
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+        setRedirecting(true)
+        setError('')
+        setTimeout(() => {
+          onSwitch('register_role')
+        }, 2500)
+      } else {
+        setError(friendlyError(err))
+      }
     } finally {
       setBusy(false)
     }
@@ -180,10 +190,14 @@ function LoginForm({ onSwitch, onDone }) {
     setError('')
     setBusy(true)
     try {
+      await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) reject(new Error('Geolocation not supported'))
+        navigator.geolocation.getCurrentPosition(resolve, () => reject(new Error('Location access required')), { enableHighAccuracy: true })
+      })
       await signInWithGoogle()
       onDone()
     } catch (err) {
-      setError(friendlyError(err))
+      setError(err.message || 'Authentication failed')
     } finally {
       setBusy(false)
     }
@@ -196,6 +210,15 @@ function LoginForm({ onSwitch, onDone }) {
         <p className="text-earth-500 text-sm mt-1">Sign in to your account</p>
       </div>
 
+      {redirecting && (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-300 rounded-xl text-amber-800 text-sm animate-fade-in">
+          <Loader2 className="w-5 h-5 animate-spin text-amber-600 shrink-0" />
+          <div>
+            <p className="font-semibold">No account found with that email</p>
+            <p className="text-xs text-amber-600 mt-0.5">Redirecting you to create a new account...</p>
+          </div>
+        </div>
+      )}
       <ErrorBanner msg={error} />
 
       <GoogleBtn onClick={handleGoogle} loading={busy} />
@@ -260,7 +283,6 @@ function LoginForm({ onSwitch, onDone }) {
   )
 }
 
-// ── REGISTRATION ROLE SELECTION SCREEN ───────────────────────────────────────────
 function RegisterRoleForm({ onSelect, onSwitch }) {
   return (
     <div className="space-y-6">
@@ -330,19 +352,36 @@ function SignupForm({ role, onSwitch, onDone }) {
       setError('Please enter your community / location.')
       return
     }
-    if (password !== confirm) { setError('Passwords do not match'); return }
-    if (password.length < 6)  { setError('Password must be at least 6 characters'); return }
+
+    // Ask strictly for location access on signup
+    setBusy(true)
+    setError('')
+    try {
+      await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          (err) => reject(new Error('Location access is strictly required to sign up on this platform. Please enable location permissions.')),
+          { enableHighAccuracy: true }
+        )
+      })
+    } catch (locErr) {
+      setError(locErr.message)
+      setBusy(false)
+      return
+    }
+
+    if (password !== confirm) { setError('Passwords do not match'); setBusy(false); return }
+    if (password.length < 6)  { setError('Password must be at least 6 characters'); setBusy(false); return }
     // Transport-specific validation
     if (role === 'transport') {
-      if (!ghanaCardId.trim()) { setError('Please enter your Ghana Card ID number.'); return }
-      if (!licenseId.trim())   { setError('Please enter your Driver\'s License number.'); return }
+      if (!ghanaCardId.trim()) { setError('Please enter your Ghana Card ID number.'); setBusy(false); return }
+      if (!licenseId.trim())   { setError('Please enter your Driver\'s License number.'); setBusy(false); return }
       if (!ghanaCardFile && !licenseFile) {
         setError('Please upload at least your Ghana Card or Driver\'s License document.')
+        setBusy(false)
         return
       }
     }
-    setBusy(true)
-    setError('')
     try {
       const extra = {
         community: community,
@@ -363,8 +402,22 @@ function SignupForm({ role, onSwitch, onDone }) {
   }
 
   async function handleGoogle() {
-    setBusy(true)
     setError('')
+    setBusy(true)
+    try {
+      await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          (err) => reject(new Error('Location access is strictly required to sign up on this platform. Please enable location permissions.')),
+          { enableHighAccuracy: true }
+        )
+      })
+    } catch (locErr) {
+      setError(locErr.message)
+      setBusy(false)
+      return
+    }
+
     try {
       await signInWithGoogle(role)
       onDone()

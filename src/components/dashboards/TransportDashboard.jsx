@@ -70,7 +70,6 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
     { id: 'deliveries', label: 'Deliveries', icon: <Navigation className="w-5 h-5" /> },
     { id: 'routes', label: 'Routes', icon: <Route className="w-5 h-5" /> },
     { id: 'revenue', label: 'Revenue', icon: <DollarSign className="w-5 h-5" /> },
-    { id: 'vehicle', label: 'Vehicle', icon: <Wrench className="w-5 h-5" /> },
   ]
 
   const [jobs, setJobs] = useState([
@@ -307,17 +306,9 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
             <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-earth-900 mb-4">Earnings Trend</h3>
               <div className="h-48 bg-earth-50 rounded-xl flex items-center justify-center">
-                <p className="text-earth-500">Chart visualization would go here</p>
+                <p className="text-earth-500">Earnings visualizer</p>
               </div>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'vehicle' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-earth-900">Vehicle Status</h2>
-            
-            <VehicleCard vehicle={vehicleStatus} />
           </div>
         )}
       </main>

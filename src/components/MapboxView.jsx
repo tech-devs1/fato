@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { MapPin, Route, Navigation, Settings, HelpCircle, Eye, EyeOff, Save, CheckCircle, RefreshCw } from 'lucide-react'
+import { MapPin, Route, Navigation, Settings, HelpCircle, RefreshCw } from 'lucide-react'
 import mapboxgl from 'mapbox-gl'
 
 // Default coordinates for key hubs in Volta Region and surroundings
@@ -30,28 +30,46 @@ export default function MapboxView({
     return localStorage.getItem('mapbox_access_token') || DEFAULT_TOKEN
   })
   const [isTokenValid, setIsTokenValid] = useState(true)
-  const [showTokenSettings, setShowTokenSettings] = useState(false)
-  const [inputToken, setInputToken] = useState(token)
   const [routeInfo, setRouteInfo] = useState(null)
   const [mapStyle, setMapStyle] = useState(style)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [userGeoloc, setUserGeoloc] = useState(null)
+  const [locationDenied, setLocationDenied] = useState(false)
+  const [inputToken, setInputToken] = useState('')
 
-  // Save custom token to localStorage
   const handleSaveToken = () => {
-    if (inputToken.trim()) {
-      localStorage.setItem('mapbox_access_token', inputToken.trim())
-      setToken(inputToken.trim())
-      setShowTokenSettings(false)
-      // Force reload map
-      if (mapInstance.current) {
-        mapInstance.current.remove()
-        mapInstance.current = null
-      }
+    const trimmed = inputToken.trim()
+    if (trimmed) {
+      localStorage.setItem('mapbox_access_token', trimmed)
+      setToken(trimmed)
       setIsTokenValid(true)
       setErrorMessage('')
     }
   }
+
+  // Request Geolocation access strictly before loading map
+  const requestLocationAccess = () => {
+    if (!navigator.geolocation) {
+      setErrorMessage('Geolocation not supported by browser.')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserGeoloc([pos.coords.longitude, pos.coords.latitude])
+        setLocationDenied(false)
+      },
+      (err) => {
+        setLocationDenied(true)
+        setErrorMessage('Location access is strictly required to view/calculate map routes.')
+      },
+      { enableHighAccuracy: true }
+    )
+  }
+
+  useEffect(() => {
+    requestLocationAccess()
+  }, [])
 
   // Parse location prop to [lng, lat]
   const parseLocation = (loc) => {
@@ -78,18 +96,19 @@ export default function MapboxView({
 
   // Initialize Map
   useEffect(() => {
-    if (!mapContainer.current || !token) return
+    if (!mapContainer.current || !token || locationDenied) return
 
     mapboxgl.accessToken = token
 
     try {
-      const center = parseLocation(startLocation) || VOLTA_COORDINATES.volta
+      // Prioritize user actual geolocation for map center/view if available
+      const center = userGeoloc || parseLocation(startLocation) || VOLTA_COORDINATES.volta
       
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: mapStyle,
         center: center,
-        zoom: startLocation && endLocation ? 8 : 9,
+        zoom: center === userGeoloc ? 11 : 9,
         attributionControl: false
       })
 
@@ -122,6 +141,26 @@ export default function MapboxView({
     }
   }, [token, mapStyle])
 
+  // Fly to user geolocation when it resolves
+  useEffect(() => {
+    const map = mapInstance.current
+    if (!map || !userGeoloc) return
+
+    // Fly to user's actual location
+    map.flyTo({ center: userGeoloc, zoom: 11, duration: 1200 })
+
+    // Add a pulsing blue dot for "My Location"
+    const myLocEl = document.createElement('div')
+    myLocEl.className = 'w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg'
+    myLocEl.style.cssText = 'animation: pulse 2s infinite; box-shadow: 0 0 0 rgba(59,130,246,0.5);'
+    const myLocMarker = new mapboxgl.Marker({ element: myLocEl })
+      .setLngLat(userGeoloc)
+      .setPopup(new mapboxgl.Popup({ offset: 15 }).setHTML('<div class="p-2 font-sans font-semibold text-sm">📍 Your Location</div>'))
+      .addTo(map)
+
+    return () => myLocMarker.remove()
+  }, [userGeoloc])
+
   // Draw Markers & Update Zoom
   useEffect(() => {
     const map = mapInstance.current
@@ -131,7 +170,7 @@ export default function MapboxView({
     markerList.current.forEach(m => m.remove())
     markerList.current = []
 
-    const startCoords = parseLocation(startLocation)
+    const startCoords = userGeoloc || parseLocation(startLocation)
     const endCoords = parseLocation(endLocation)
 
     // Add Start Marker
@@ -214,14 +253,14 @@ export default function MapboxView({
     } else if (startCoords) {
       map.easeTo({ center: startCoords, zoom: 10, duration: 800 })
     }
-  }, [startLocation, endLocation, markers, isTokenValid])
+  }, [startLocation, endLocation, markers, isTokenValid, userGeoloc])
 
   // Call Directions API and Draw Route Layer
   useEffect(() => {
     const map = mapInstance.current
     if (!map || !isTokenValid) return
 
-    const startCoords = parseLocation(startLocation)
+    const startCoords = userGeoloc || parseLocation(startLocation)
     const endCoords = parseLocation(endLocation)
 
     // Remove existing route layers
@@ -315,7 +354,7 @@ export default function MapboxView({
         setErrorMessage(err.message)
         console.error(err)
       })
-  }, [startLocation, endLocation, token, isTokenValid])
+  }, [startLocation, endLocation, token, isTokenValid, userGeoloc])
 
   // Draw home active connections
   useEffect(() => {
@@ -427,8 +466,8 @@ export default function MapboxView({
         </div>
       )}
 
-      {/* Style Toggle Floating controls */}
-      {isTokenValid && (
+      {/* Style Toggle Floating controls — Settings button REMOVED */}
+      {isTokenValid && !locationDenied && (
         <div className="absolute bottom-4 left-4 flex gap-2 z-10">
           <button
             onClick={() => setMapStyle(mapStyle.includes('streets') ? 'mapbox://styles/mapbox/satellite-streets-v12' : 'mapbox://styles/mapbox/streets-v12')}
@@ -437,38 +476,23 @@ export default function MapboxView({
             <Navigation className="w-4 h-4 text-terracotta-600" />
             <span>{mapStyle.includes('streets') && !mapStyle.includes('satellite') ? 'Satellite' : 'Map'}</span>
           </button>
-          <button
-            onClick={() => setShowTokenSettings(!showTokenSettings)}
-            className="p-2.5 bg-white/90 hover:bg-white text-earth-800 rounded-xl shadow-glass border border-earth-200/50 transition-colors flex items-center"
-          >
-            <Settings className="w-4 h-4 text-earth-600" />
-          </button>
         </div>
       )}
 
-      {/* Floating Settings Menu */}
-      {showTokenSettings && isTokenValid && (
-        <div className="absolute bottom-16 left-4 right-4 md:right-auto md:w-80 glass p-5 rounded-2xl border border-white/40 shadow-glass-lg z-20 animate-slide-up">
-          <h4 className="font-bold text-earth-900 text-sm mb-3">Mapbox Settings</h4>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-medium text-earth-500 mb-1">Access Token</label>
-              <div className="relative">
-                <input
-                  type="password"
-                  value={inputToken}
-                  onChange={(e) => setInputToken(e.target.value)}
-                  placeholder="Mapbox API Key"
-                  className="w-full pl-3 pr-8 py-1.5 bg-earth-50 rounded-lg border border-earth-200 focus:outline-none focus:ring-1 focus:ring-terracotta-500 text-xs text-earth-900"
-                />
-              </div>
-            </div>
+      {/* Location Denied Lock View Screen */}
+      {locationDenied && (
+        <div className="absolute inset-0 bg-earth-900/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center z-30 animate-fade-in">
+          <div className="glass-lg max-w-md p-6 rounded-3xl text-white space-y-4">
+            <MapPin className="w-12 h-12 text-terracotta-400 mx-auto animate-pulse" />
+            <h3 className="text-xl font-bold text-earth-100">Location Access Required</h3>
+            <p className="text-sm text-earth-200">
+              This application requires location access to search routes, render maps, and show distances relative to your current location.
+            </p>
             <button
-              onClick={handleSaveToken}
-              className="w-full py-2 bg-terracotta-600 hover:bg-terracotta-700 text-white rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+              onClick={requestLocationAccess}
+              className="w-full px-4 py-2.5 bg-terracotta-600 hover:bg-terracotta-700 text-white rounded-xl font-bold text-sm transition-all"
             >
-              <Save className="w-3.5 h-3.5" />
-              <span>Save & Reload</span>
+              Grant Location Access
             </button>
           </div>
         </div>
