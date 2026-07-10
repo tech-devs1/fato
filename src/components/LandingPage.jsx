@@ -59,11 +59,9 @@ export default function LandingPage({ onContinue }) {
       <nav className="relative z-10 px-6 py-5 border-b border-earth-100/50 bg-white/40 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="Nunya AI Logo" 
-              className="w-11 h-11 rounded-2xl object-cover shadow-md"
-            />
+            <div className="w-11 h-11 bg-gradient-to-br from-forest-500 to-forest-700 rounded-2xl flex items-center justify-center shadow-md shadow-forest-500/10">
+              <Sprout className="w-6 h-6 text-white" />
+            </div>
             <span className="text-2xl font-black tracking-tight text-earth-900">
               nunya<span className="text-terracotta-600">AI</span>
             </span>

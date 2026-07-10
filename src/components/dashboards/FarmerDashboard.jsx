@@ -117,11 +117,9 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
       <header className="sticky top-0 z-50 px-6 py-4" style={{ background: 'linear-gradient(135deg, #2d6a4f 0%, #40916c 60%, #52b788 100%)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="Nunya AI Logo" 
-              className="w-10 h-10 rounded-xl object-cover"
-            />
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <Sprout className="w-6 h-6 text-white" />
+            </div>
             <div>
               <h1 className="text-xl font-bold text-white">My Farm</h1>
               <p className="text-xs text-green-100">Farmer Portal</p>

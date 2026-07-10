@@ -96,47 +96,17 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
     };
   }, [currentUser]);
 
-  // Mockup data constants to display alongside live data
-  const MOCK_USERS = [
-    { id: 'usr_1', displayName: 'Emmanuel A.', role: 'farmer', farm_name: "Emmanuel's Organic Farm", community: 'Ho', location: 'Ho', verification_status: 'Verified Farmer', joined_date: '2024-02-10T10:30:00Z' },
-    { id: 'usr_2', displayName: 'Grace K.', role: 'farmer', farm_name: "Grace's Cassava Hub", community: 'Anloga', location: 'Anloga', verification_status: 'Growing Reputation', joined_date: '2024-02-12T10:30:00Z' },
-    { id: 'usr_3', displayName: 'Kofi Mensah', role: 'transport', transporter_id: 'Kofi Mensah', community: 'Ho', location: 'Ho', verification_status: 'Reliable Transporter', joined_date: '2024-02-15T10:30:00Z' },
-    { id: 'usr_4', displayName: 'Keta Market Co.', role: 'buyer', business_name: 'Keta Market Co.', community: 'Keta', location: 'Keta', verification_status: 'New Buyer', joined_date: '2024-02-16T10:30:00Z' }
-  ];
-
-  const MOCK_VERIFICATIONS = {
-    usr_1: { phone_verified: true, email_verified: true, national_id_verified: false, location_verified: true, vehicle_verified: false },
-    usr_2: { phone_verified: true, email_verified: false, national_id_verified: false, location_verified: false, vehicle_verified: false },
-    usr_3: { phone_verified: true, email_verified: true, national_id_verified: true, location_verified: true, vehicle_verified: false },
-    usr_4: { phone_verified: true, email_verified: true, national_id_verified: false, location_verified: false, vehicle_verified: false }
-  };
-
-  const MOCK_ROLE_PROFILES = {
-    usr_1: { farm_name: "Emmanuel's Organic Farm", community: 'Ho', verification_status: 'Verified Farmer', joined_date: '2024-02-10' },
-    usr_2: { farm_name: "Grace's Cassava Hub", community: 'Anloga', verification_status: 'Growing Reputation', joined_date: '2024-02-12' },
-    usr_3: { vehicle_type: 'Light Truck', community: 'Ho', verification_status: 'Reliable Transporter', joined_date: '2024-02-15' },
-    usr_4: { business_name: 'Keta Market Co.', community: 'Keta', verification_status: 'New Buyer', joined_date: '2024-02-16' }
-  };
-
-  // Combine into single usersPending list (merge Mock and Firestore users)
+  // Live-only users list from Firestore
   const usersPending = React.useMemo(() => {
-    const mergedUsers = [...MOCK_USERS];
-    allUsers.forEach(u => {
-      if (!mergedUsers.some(mu => mu.id === u.id)) {
-        mergedUsers.push(u);
-      }
-    });
-
-    return mergedUsers.map(user => {
-      const isMock = user.id.startsWith('usr_');
-      const ver = (isMock ? MOCK_VERIFICATIONS[user.id] : verifications[user.id]) || {
+    return allUsers.map(user => {
+      const ver = verifications[user.id] || {
         phone_verified: false,
         email_verified: false,
         national_id_verified: false,
         location_verified: false,
         vehicle_verified: false,
       };
-      const profile = (isMock ? MOCK_ROLE_PROFILES[user.id] : roleProfiles[user.id]) || {};
+      const profile = roleProfiles[user.id] || {};
       return {
         ...user,
         name: user.displayName || profile.farm_name || profile.business_name || 'User',
@@ -156,45 +126,32 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
   ]
 
   const overviewStats = React.useMemo(() => {
-    const totalUsers = allUsers.length + MOCK_USERS.length;
-    const activeListings = 1247 + allUsers.length;
-    const transportJobs = 156;
-    const revenue = '₵45,230';
+    const totalUsers = allUsers.length;
+    const activeListings = allUsers.length;
+    const transportJobs = allUsers.filter(u => u.role === 'transport').length;
+    const revenue = '₵0';
 
     return [
-      { label: 'Total Users', value: totalUsers.toString(), change: '+12%', icon: <Users className="w-5 h-5" />, color: 'terracotta' },
-      { label: 'Active Listings', value: activeListings.toString(), change: '+8%', icon: <Package className="w-5 h-5" />, color: 'forest' },
-      { label: 'Transport Jobs', value: transportJobs.toString(), change: '+15%', icon: <Truck className="w-5 h-5" />, color: 'gold' },
-      { label: 'Monthly Revenue', value: revenue, change: '+22%', icon: <TrendingUp className="w-5 h-5" />, color: 'earth' },
+      { label: 'Total Users', value: totalUsers.toString(), change: '', icon: <Users className="w-5 h-5" />, color: 'terracotta' },
+      { label: 'Active Listings', value: activeListings.toString(), change: '', icon: <Package className="w-5 h-5" />, color: 'forest' },
+      { label: 'Transporters', value: transportJobs.toString(), change: '', icon: <Truck className="w-5 h-5" />, color: 'gold' },
+      { label: 'Monthly Revenue', value: revenue, change: '', icon: <TrendingUp className="w-5 h-5" />, color: 'earth' },
     ];
   }, [allUsers]);
 
   const recentUsers = React.useMemo(() => {
-    const mergedList = [...MOCK_USERS];
-    allUsers.forEach(u => {
-      if (!mergedList.some(mu => mu.id === u.id)) {
-        mergedList.push(u);
-      }
-    });
+    const processed = allUsers.map(user => {
+      const profile = roleProfiles[user.id] || {};
 
-    console.log('Merged user list before processing:', mergedList);
-    console.log('Role profiles:', roleProfiles);
-    console.log('Current user role filter:', userRoleFilter);
-
-    const processed = mergedList.map(user => {
-      const isMock = user.id.startsWith('usr_');
-      const profile = (isMock ? MOCK_ROLE_PROFILES[user.id] : roleProfiles[user.id]) || {};
-      
-      // Use createdAt from users collection for real users, fallback to profile joined_date
       let joinedDate = null;
-      if (!isMock && user.createdAt) {
+      if (user.createdAt) {
         joinedDate = user.createdAt;
       } else if (profile.joined_date) {
         joinedDate = profile.joined_date;
       }
-      
-      const formattedJoined = joinedDate 
-        ? (isMock ? 'Today' : new Date(joinedDate).toLocaleDateString()) 
+
+      const formattedJoined = joinedDate
+        ? new Date(joinedDate).toLocaleDateString()
         : 'N/A';
 
       return {
@@ -203,7 +160,7 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
         location: profile.community || profile.location || 'Not Specified',
         status: profile.verification_status || 'Active',
         joined: formattedJoined,
-        joinedDate: joinedDate, // Keep raw date for sorting
+        joinedDate: joinedDate,
       };
     });
 
@@ -287,16 +244,9 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
       {/* Header */}
       <header className="glass sticky top-0 z-50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src="/logo.png" 
-              alt="Nunya AI Logo" 
-              className="w-10 h-10 rounded-xl object-cover"
-            />
-            <div>
-              <h1 className="text-2xl font-bold text-earth-900">Admin Dashboard</h1>
-              <p className="text-sm text-earth-500">Platform Overview</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-earth-900">Admin Dashboard</h1>
+            <p className="text-sm text-earth-500">Platform Overview</p>
           </div>
           <div className="flex items-center gap-3">
             <button 
