@@ -23,11 +23,12 @@ export default function SettingsDropdown({ onLogout }) {
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        <button 
-          onClick={() => setIsOpen(!isOpen)} 
-          className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 rounded-xl bg-transparent hover:bg-white/20 transition-colors"
+          aria-label="Settings"
         >
-          <Settings className="w-5 h-5 text-white" />
+          <Settings className="w-5 h-5 text-earth-900" />
         </button>
 
         {isOpen && (
