@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react'
 
 const LETTERS = [
-  { char: 'n', delay: 0.1,  scatteredX: -130, scatteredY: 60,   scatteredRot: -45, isAccent: false },
-  { char: 'u', delay: 0.35, scatteredX: -60,  scatteredY: -110, scatteredRot: 55,  isAccent: false },
-  { char: 'n', delay: 0.05, scatteredX: 20,   scatteredY: 120,  scatteredRot: -25, isAccent: false },
-  { char: 'y', delay: 0.45, scatteredX: -40,  scatteredY: 70,   scatteredRot: 35,  isAccent: false },
-  { char: 'a', delay: 0.2,  scatteredX: 90,   scatteredY: -80,  scatteredRot: -30, isAccent: false },
-  { char: 'A', delay: 0.5,  scatteredX: 150,  scatteredY: 100,  scatteredRot: 40,  isAccent: true },
-  { char: 'I', delay: 0.28, scatteredX: -180, scatteredY: -50,  scatteredRot: -60, isAccent: true }
+  { char: 'n', delay: 0.1, isAccent: false },
+  { char: 'u', delay: 0.35, isAccent: false },
+  { char: 'n', delay: 0.05, isAccent: false },
+  { char: 'y', delay: 0.45, isAccent: false },
+  { char: 'a', delay: 0.2, isAccent: false },
+  { char: 'A', delay: 0.5, isAccent: true },
+  { char: 'I', delay: 0.28, isAccent: true }
 ]
 
 const SHARDS = [
@@ -57,14 +57,14 @@ export default function LoadingScreen({ onComplete }) {
 
     if (phase === 'falling') {
       return {
-        transform: `translate(${letter.scatteredX}px, ${letter.scatteredY}px) rotate(${letter.scatteredRot}deg)`,
+        transform: 'translateY(0)',
         opacity: 1,
-        transition: 'transform 1.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease-out',
-        transitionDelay: `${letter.delay}s`
+        animation: `fall 1.4s cubic-bezier(0.175,0.885,0.32,1.275) ${letter.delay}s forwards`,
+        // No extra transition needed; animation handles movement
       }
     }
 
-    // 'reshaping' or 'vanishing' -> fly back to home center layout
+    // 'reshaping' or 'vanishing' – fly back to home center layout
     return {
       transform: 'translate(0px, 0px) rotate(0deg)',
       opacity: 1,

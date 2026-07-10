@@ -89,3 +89,7 @@
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+@keyframes fall {
+  from { transform: translateY(-120vh); }
+  to { transform: translateY(0); }
+}
