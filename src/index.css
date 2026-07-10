@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-ivory-50 text-earth-900;
+    @apply bg-gradient-to-br from-gold-200 via-gold-300 to-sunset-300 text-earth-900;
   }
 }
 
