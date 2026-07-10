@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   Sparkles, Mail, Lock, Eye, EyeOff, Phone, ArrowRight,
-  ChevronLeft, Loader2, User, CheckCircle, AlertCircle, MapPin, Truck, ShoppingBag, Shield
+  ChevronLeft, Loader2, User, CheckCircle, AlertCircle, MapPin, Truck, ShoppingBag, Shield,
+  FileText, Upload, CreditCard
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -298,6 +299,11 @@ function SignupForm({ role, onSwitch, onDone }) {
   const [showPw, setShowPw]       = useState(false)
   const [error, setError]         = useState('')
   const [busy, setBusy]           = useState(false)
+  // Transport-specific document fields
+  const [ghanaCardId, setGhanaCardId]       = useState('')
+  const [licenseId, setLicenseId]           = useState('')
+  const [ghanaCardFile, setGhanaCardFile]   = useState(null)
+  const [licenseFile, setLicenseFile]       = useState(null)
 
   async function handleSignUp(e) {
     e.preventDefault()
@@ -307,10 +313,25 @@ function SignupForm({ role, onSwitch, onDone }) {
     }
     if (password !== confirm) { setError('Passwords do not match'); return }
     if (password.length < 6)  { setError('Password must be at least 6 characters'); return }
+    // Transport-specific validation
+    if (role === 'transport') {
+      if (!ghanaCardId.trim()) { setError('Please enter your Ghana Card ID number.'); return }
+      if (!licenseId.trim())   { setError('Please enter your Driver\'s License number.'); return }
+      if (!ghanaCardFile && !licenseFile) {
+        setError('Please upload at least your Ghana Card or Driver\'s License document.')
+        return
+      }
+    }
     setBusy(true)
     setError('')
     try {
-      await signUp(email, password, name, role, phone)
+      const extra = role === 'transport' ? {
+        ghana_card_id: ghanaCardId,
+        license_id: licenseId,
+        ghana_card_file: ghanaCardFile?.name || null,
+        license_file: licenseFile?.name || null,
+      } : {}
+      await signUp(email, password, name, role, phone, extra)
       onDone()
     } catch (err) {
       setError(friendlyError(err))
@@ -395,13 +416,70 @@ function SignupForm({ role, onSwitch, onDone }) {
           onChange={e => setConfirm(e.target.value)}
           required
         />
+
+        {/* Transport Document Upload Section */}
+        {role === 'transport' && (
+          <div className="space-y-3 pt-2 pb-1">
+            <div className="flex items-center gap-2 text-xs font-bold text-earth-500 uppercase tracking-wider">
+              <CreditCard className="w-4 h-4" />
+              <span>Required Documents for Verification</span>
+            </div>
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+              ⚠️ Your account will be reviewed by an admin before you can access the platform.
+            </div>
+
+            {/* Ghana Card */}
+            <Input
+              icon={<CreditCard className="w-4 h-4" />}
+              placeholder="Ghana Card ID (e.g. GHA-123456789-0)"
+              value={ghanaCardId}
+              onChange={e => setGhanaCardId(e.target.value)}
+              required
+            />
+            <label className="flex flex-col gap-1">
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer transition ${
+                  ghanaCardFile ? 'border-forest-400 bg-forest-50' : 'border-earth-200 bg-white hover:border-terracotta-400 hover:bg-terracotta-50/30'
+                }`}
+              >
+                <Upload className={`w-4 h-4 shrink-0 ${ghanaCardFile ? 'text-forest-600' : 'text-earth-400'}`} />
+                <span className={`text-sm truncate ${ghanaCardFile ? 'text-forest-700 font-medium' : 'text-earth-400'}`}>
+                  {ghanaCardFile ? ghanaCardFile.name : 'Upload Ghana Card (photo/scan)'}
+                </span>
+              </div>
+              <input type="file" accept="image/*,.pdf" className="sr-only" onChange={e => setGhanaCardFile(e.target.files[0] || null)} />
+            </label>
+
+            {/* Driver's License */}
+            <Input
+              icon={<FileText className="w-4 h-4" />}
+              placeholder="Driver's License Number"
+              value={licenseId}
+              onChange={e => setLicenseId(e.target.value)}
+              required
+            />
+            <label className="flex flex-col gap-1">
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed cursor-pointer transition ${
+                  licenseFile ? 'border-forest-400 bg-forest-50' : 'border-earth-200 bg-white hover:border-terracotta-400 hover:bg-terracotta-50/30'
+                }`}
+              >
+                <Upload className={`w-4 h-4 shrink-0 ${licenseFile ? 'text-forest-600' : 'text-earth-400'}`} />
+                <span className={`text-sm truncate ${licenseFile ? 'text-forest-700 font-medium' : 'text-earth-400'}`}>
+                  {licenseFile ? licenseFile.name : "Upload Driver's License (photo/scan)"}
+                </span>
+              </div>
+              <input type="file" accept="image/*,.pdf" className="sr-only" onChange={e => setLicenseFile(e.target.files[0] || null)} />
+            </label>
+          </div>
+        )}
         
         <button
           type="submit"
           disabled={busy}
           className="w-full py-3 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:from-terracotta-700 hover:to-terracotta-800 transition-all duration-200 disabled:opacity-60"
         >
-          {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Create Account <ArrowRight className="w-4 h-4" /></>}
+          {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{role === 'transport' ? 'Submit for Review' : 'Create Account'} <ArrowRight className="w-4 h-4" /></>}
         </button>
       </form>
 

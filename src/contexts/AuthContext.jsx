@@ -125,15 +125,41 @@ export function AuthProvider({ children }) {
 
   // ── Email / Password ───────────────────────────────────────────────────────
 
-  async function signUp(email, password, displayName, role = 'farmer', phone = '') {
+  async function signUp(email, password, displayName, role = 'farmer', phone = '', extra = {}) {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(cred.user, { displayName })
     localStorage.setItem(`agro_role_${cred.user.uid}`, role)
-    await createUserDoc(cred.user, { displayName, role, phone })
+    // For transporters: default to pending_review so admin can approve them
+    const transportExtra = role === 'transport'
+      ? { verification_status: 'pending_review', ...extra }
+      : extra
+    await createUserDoc(cred.user, { displayName, role, phone, ...transportExtra })
     return cred
   }
 
   async function signIn(email, password) {
+    // ── Admin Persona Bypass ─────────────────────────────────────────────────
+    if (email.trim().toLowerCase() === 'admin@nunya.com' && password === 'admin000') {
+      const mockAdmin = {
+        uid: 'admin_root',
+        email: 'admin@nunya.com',
+        displayName: 'Root Admin',
+        photoURL: null,
+        phone: null,
+        role: 'admin',
+      }
+      setCurrentUser(mockAdmin)
+      setUserProfile(mockAdmin)
+      setUserFullProfile({
+        user: mockAdmin,
+        verification: { phone_verified: true, email_verified: true, national_id_verified: true, location_verified: true },
+        reputation: { average_rating: 5.0, reputation_level: 'Trusted Member', completed_transactions: 0 },
+        roleProfile: { verification_status: 'Admin', joined_date: new Date().toISOString() }
+      })
+      localStorage.setItem('agro_role_admin_root', 'admin')
+      return { user: mockAdmin }
+    }
+    // ── Normal Firebase Sign-In ───────────────────────────────────────────────
     const cred = await signInWithEmailAndPassword(auth, email, password)
     const savedRole = localStorage.getItem(`agro_role_${cred.user.uid}`) || 'farmer'
     await createUserDoc(cred.user, { role: savedRole })
@@ -195,6 +221,14 @@ export function AuthProvider({ children }) {
   // ── Sign Out ───────────────────────────────────────────────────────────────
 
   async function logOut() {
+    // Clear mock admin session
+    if (userProfile?.uid === 'admin_root') {
+      setCurrentUser(null)
+      setUserProfile(null)
+      setUserFullProfile(null)
+      localStorage.removeItem('agro_role_admin_root')
+      return
+    }
     await signOut(auth)
     setUserProfile(null)
     setUserFullProfile(null)

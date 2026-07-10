@@ -233,6 +233,21 @@ export default function AdminDashboard({ onNavigate }) {
                   checklistItems.push({ key: 'vehicle_verified', label: 'Vehicle Condition Audit', icon: <Truck className="w-4 h-4" /> })
                 }
 
+                // Helper to approve a pending transporter (set all verification flags true)
+                const handleApproveTransporter = async (user) => {
+                  const fields = ['phone_verified','email_verified','national_id_verified','location_verified','vehicle_verified'];
+                  for (const f of fields) {
+                    try { await adminUpdateVerification(user.id, f, true, user.role); } catch(e){ console.warn('Approve error',e); }
+                  }
+                  try { await adminUpdateVerification(user.id, 'verification_status', 'verified_transport', user.role); } catch(e){ console.warn('Status error',e); }
+                  setUsersPending(prev=>prev.filter(u=>u.id!==user.id));
+                };
+
+                const handleRejectTransporter = async (user) => {
+                  try { await adminUpdateVerification(user.id, 'verification_status', 'rejected', user.role); } catch(e){ console.warn('Reject error',e); }
+                  setUsersPending(prev=>prev.filter(u=>u.id!==user.id));
+                };
+
                 const handleToggle = async (field, currentValue) => {
                   const updatedValue = !currentValue
                   try {
@@ -281,7 +296,22 @@ export default function AdminDashboard({ onNavigate }) {
                                   {item.icon}
                                 </div>
                                 <span className="text-xs text-earth-700 font-medium">{item.label}</span>
-                              </div>
+                                {/* Action Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => handleApproveTransporter(user)}
+                      className="flex-1 px-4 py-2 bg-forest-600 text-white rounded-xl hover:bg-forest-700 transition"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleRejectTransporter(user)}
+                      className="flex-1 px-4 py-2 bg-terracotta-600 text-white rounded-xl hover:bg-terracotta-700 transition"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
                               
                               <button
                                 onClick={() => handleToggle(item.key, isVerified)}
