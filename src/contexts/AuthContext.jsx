@@ -89,6 +89,7 @@ export function AuthProvider({ children }) {
 
       const updated = await getDoc(ref)
       const userData = updated.data()
+      localStorage.setItem(`agro_role_${firebaseUser.uid}`, userData.role)
       setUserProfile(userData)
       await loadFullProfile(firebaseUser.uid, userData.role)
     } catch (dbError) {
@@ -127,13 +128,15 @@ export function AuthProvider({ children }) {
   async function signUp(email, password, displayName, role = 'farmer') {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(cred.user, { displayName })
+    localStorage.setItem(`agro_role_${cred.user.uid}`, role)
     await createUserDoc(cred.user, { displayName, role })
     return cred
   }
 
   async function signIn(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password)
-    await createUserDoc(cred.user)
+    const savedRole = localStorage.getItem(`agro_role_${cred.user.uid}`) || 'farmer'
+    await createUserDoc(cred.user, { role: savedRole })
     return cred
   }
 
@@ -144,6 +147,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem('agro_registration_role', role)
     try {
       const cred = await signInWithPopup(auth, googleProvider)
+      localStorage.setItem(`agro_role_${cred.user.uid}`, role)
       await createUserDoc(cred.user, { role })
       return cred
     } catch (err) {
@@ -183,6 +187,7 @@ export function AuthProvider({ children }) {
 
   async function verifyOTP(confirmationResult, otp, role = 'farmer') {
     const cred = await confirmationResult.confirm(otp)
+    localStorage.setItem(`agro_role_${cred.user.uid}`, role)
     await createUserDoc(cred.user, { role })
     return cred
   }
@@ -203,6 +208,7 @@ export function AuthProvider({ children }) {
       .then(async (cred) => {
         if (cred) {
           const savedRole = localStorage.getItem('agro_registration_role') || 'farmer'
+          localStorage.setItem(`agro_role_${cred.user.uid}`, savedRole)
           await createUserDoc(cred.user, { role: savedRole })
         }
       })
@@ -212,22 +218,43 @@ export function AuthProvider({ children }) {
 
     // 2. Listen to state changes
     const unsub = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user)
-      if (user) {
-        const ref = doc(db, 'users', user.uid)
-        const snap = await getDoc(ref)
-        if (snap.exists()) {
-          const userData = snap.data()
-          setUserProfile(userData)
-          await loadFullProfile(user.uid, userData.role)
+      try {
+        setCurrentUser(user)
+        if (user) {
+          const savedRole = localStorage.getItem(`agro_role_${user.uid}`) || 'farmer'
+          const ref = doc(db, 'users', user.uid)
+          const snap = await getDoc(ref)
+          if (snap.exists()) {
+            const userData = snap.data()
+            // Keep localStorage in sync
+            localStorage.setItem(`agro_role_${user.uid}`, userData.role)
+            setUserProfile(userData)
+            await loadFullProfile(user.uid, userData.role)
+          } else {
+            await createUserDoc(user, { role: savedRole })
+          }
         } else {
-          await createUserDoc(user)
+          setUserProfile(null)
+          setUserFullProfile(null)
         }
-      } else {
-        setUserProfile(null)
-        setUserFullProfile(null)
+      } catch (err) {
+        console.error("Auth state change firestore fetch failed. Falling back to local offline mode:", err)
+        if (user) {
+          const savedRole = localStorage.getItem(`agro_role_${user.uid}`) || 'farmer'
+          const fallbackUserData = {
+            uid: user.uid,
+            email: user.email || null,
+            phone: user.phoneNumber || null,
+            displayName: user.displayName || 'Demo User',
+            photoURL: user.photoURL || null,
+            role: savedRole,
+          }
+          setUserProfile(fallbackUserData)
+          await loadFullProfile(user.uid, savedRole)
+        }
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     })
     return unsub
   }, [])
