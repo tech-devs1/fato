@@ -6,7 +6,6 @@ export default function LandingPage({ onContinue }) {
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
   const [showDesktopInstructions, setShowDesktopInstructions] = useState(false)
-  const [canInstall, setCanInstall] = useState(false)
 
   useEffect(() => {
     // Detect iOS device
@@ -17,15 +16,9 @@ export default function LandingPage({ onContinue }) {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault()
       setDeferredPrompt(e)
-      setCanInstall(true)
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-    // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setCanInstall(false)
-    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -43,10 +36,9 @@ export default function LandingPage({ onContinue }) {
       const { outcome } = await deferredPrompt.userChoice
       if (outcome === 'accepted') {
         setDeferredPrompt(null)
-        setCanInstall(false)
       }
     } else {
-      // Show desktop instructions for Chrome/Edge users
+      // Fallback: show desktop instructions when native prompt isn't available
       setShowDesktopInstructions(true)
     }
   }

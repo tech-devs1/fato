@@ -164,16 +164,36 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
     return mergedList.map(user => {
       const isMock = user.id.startsWith('usr_');
       const profile = (isMock ? MOCK_ROLE_PROFILES[user.id] : roleProfiles[user.id]) || {};
+      
+      // Use createdAt from users collection for real users, fallback to profile joined_date
+      let joinedDate = null;
+      if (!isMock && user.createdAt) {
+        joinedDate = user.createdAt;
+      } else if (profile.joined_date) {
+        joinedDate = profile.joined_date;
+      }
+      
+      const formattedJoined = joinedDate 
+        ? (isMock ? 'Today' : new Date(joinedDate).toLocaleDateString()) 
+        : 'N/A';
+
       return {
         ...user,
         name: user.displayName || profile.farm_name || profile.business_name || 'User',
         location: profile.community || profile.location || 'Not Specified',
         status: profile.verification_status || 'Active',
-        joined: profile.joined_date ? (isMock ? 'Today' : new Date(profile.joined_date).toLocaleDateString()) : 'N/A',
+        joined: formattedJoined,
+        joinedDate: joinedDate, // Keep raw date for sorting
       };
     }).filter(u => {
       if (userRoleFilter === 'all') return true;
       return u.role === userRoleFilter;
+    }).sort((a, b) => {
+      // Sort by joined date (newest first)
+      if (!a.joinedDate && !b.joinedDate) return 0;
+      if (!a.joinedDate) return 1;
+      if (!b.joinedDate) return -1;
+      return new Date(b.joinedDate) - new Date(a.joinedDate);
     });
   }, [allUsers, roleProfiles, userRoleFilter]);
 
@@ -395,34 +415,69 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
                   }
 
                   const handleApproveUser = async (user) => {
+                    // Check if this is a mock user
+                    if (user.id.startsWith('usr_')) {
+                      toast(`Cannot approve mock user ${user.name}. This is demo data.`, 'error');
+                      return;
+                    }
+                    
                     const fields = ['phone_verified','email_verified','national_id_verified','location_verified'];
                     if (user.role === 'transport') {
                       fields.push('vehicle_verified');
                     }
-                    for (const f of fields) {
-                      try { await adminUpdateVerification(user.id, f, true, user.role); } catch(e){ console.warn('Approve error',e); }
+                    try {
+                      console.log('Approving user:', user.id, user.name);
+                      for (const f of fields) {
+                        await adminUpdateVerification(user.id, f, true, user.role);
+                        console.log(`Updated ${f} to true for user ${user.id}`);
+                      }
+                      toast(`Approved ${user.name} successfully!`, 'success');
+                    } catch (error) {
+                      console.error('Approve error:', error);
+                      toast(`Failed to approve ${user.name}: ${error.message}`, 'error');
                     }
-                    toast(`Approved ${user.name} successfully!`, 'success');
                   };
 
                   const handleRejectUser = async (user) => {
+                    // Check if this is a mock user
+                    if (user.id.startsWith('usr_')) {
+                      toast(`Cannot reject mock user ${user.name}. This is demo data.`, 'error');
+                      return;
+                    }
+                    
                     const fields = ['phone_verified','email_verified','national_id_verified','location_verified'];
                     if (user.role === 'transport') {
                       fields.push('vehicle_verified');
                     }
-                    for (const f of fields) {
-                      try { await adminUpdateVerification(user.id, f, false, user.role); } catch(e){ console.warn('Reject error',e); }
+                    try {
+                      console.log('Rejecting user:', user.id, user.name);
+                      for (const f of fields) {
+                        await adminUpdateVerification(user.id, f, false, user.role);
+                        console.log(`Updated ${f} to false for user ${user.id}`);
+                      }
+                      toast(`Rejected/Reset verification for ${user.name}`, 'info');
+                    } catch (error) {
+                      console.error('Reject error:', error);
+                      toast(`Failed to reject ${user.name}: ${error.message}`, 'error');
                     }
-                    toast(`Rejected/Reset verification for ${user.name}`, 'info');
                   };
 
                   const handleToggle = async (field, currentValue) => {
+                    // Check if this is a mock user
+                    if (user.id.startsWith('usr_')) {
+                      toast(`Cannot update mock user ${user.name}. This is demo data.`, 'error');
+                      return;
+                    }
+                    
                     const updatedValue = !currentValue
                     try {
+                      console.log(`Toggling ${field} for user ${user.id} from ${currentValue} to ${updatedValue}`);
                       await adminUpdateVerification(user.id, field, updatedValue, user.role)
+                      console.log(`Successfully updated ${field} to ${updatedValue}`);
                       toast(`${field.replace('_', ' ')} updated successfully.`, 'success')
-                    } catch (e) {
-                      console.warn("Firestore update skipped or offline.", e)
+                    } catch (error) {
+                      console.error("Toggle error:", error)
+                      toast(`Failed to update ${field.replace('_', ' ')}: ${error.message}`, 'error')
                     }
                   }
 

@@ -20,9 +20,31 @@ const ROLE_HOME = {
 // ── Inner app — has access to auth context ─────────────────────────────────────
 function AppInner() {
   const { currentUser, userProfile } = useAuth()
-  const [showLanding, setShowLanding] = useState(true)
-  const [showAuth,    setShowAuth]    = useState(false)
-  const [currentView, setCurrentView] = useState(null)
+  const [showLanding, setShowLanding] = useState(() => {
+    const saved = localStorage.getItem('nunya_show_landing')
+    return saved !== null ? JSON.parse(saved) : true
+  })
+  const [showAuth,    setShowAuth]    = useState(() => {
+    const saved = localStorage.getItem('nunya_show_auth')
+    return saved !== null ? JSON.parse(saved) : false
+  })
+  const [currentView, setCurrentView] = useState(() => {
+    const saved = localStorage.getItem('nunya_current_view')
+    return saved || null
+  })
+
+  // Persist state to localStorage
+  useEffect(() => {
+    localStorage.setItem('nunya_show_landing', JSON.stringify(showLanding))
+  }, [showLanding])
+
+  useEffect(() => {
+    localStorage.setItem('nunya_show_auth', JSON.stringify(showAuth))
+  }, [showAuth])
+
+  useEffect(() => {
+    localStorage.setItem('nunya_current_view', currentView || '')
+  }, [currentView])
 
   // Once the user profile loads, auto-navigate to their role dashboard
   useEffect(() => {
@@ -30,6 +52,7 @@ function AppInner() {
       const roleHome = ROLE_HOME[userProfile.role] || 'home'
       if (!currentView) {
         setCurrentView(roleHome)
+        setShowLanding(false)
       }
     }
   }, [currentUser, userProfile])
@@ -51,6 +74,10 @@ function AppInner() {
   const handleLogout = () => {
     setCurrentView(null)
     setShowLanding(true)
+    // Clear persisted state on logout
+    localStorage.removeItem('nunya_show_landing')
+    localStorage.removeItem('nunya_show_auth')
+    localStorage.removeItem('nunya_current_view')
   }
 
   // ── 1. Landing page ──────────────────────────────────────────────────────────
