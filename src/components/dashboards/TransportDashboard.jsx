@@ -1,28 +1,20 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation, ShoppingBag, X } from 'lucide-react'
-<<<<<<< HEAD
 import { useAuth } from '../../contexts/AuthContext'
 import ReputationCard from '../reputation/ReputationCard'
 import MapboxView from '../MapboxView'
 import SettingsDropdown from './SettingsDropdown'
 import { useToast } from '../ui/Toast'
-=======
-import MapboxView from '../MapboxView'
->>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
 
 export default function TransportDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('jobs')
-<<<<<<< HEAD
   const { userFullProfile, userProfile, logOut } = useAuth()
   const { toast } = useToast()
 
-=======
->>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
   const [startLoc, setStartLoc] = useState('ho')
   const [endLoc, setEndLoc] = useState('keta')
   const [activeNavigationJob, setActiveNavigationJob] = useState(null)
   const [customRouteInfo, setCustomRouteInfo] = useState(null)
-<<<<<<< HEAD
 
   const mockProfile = {
     user: { displayName: 'Kofi Mensah' },
@@ -58,8 +50,6 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
     await logOut()
     if (onLogout) onLogout()
   }
-=======
->>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
 
   const tabs = [
     { id: 'jobs', label: 'Available Jobs', icon: <Truck className="w-5 h-5" /> },
@@ -182,13 +172,8 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
 
             {/* Available Jobs */}
             <div className="space-y-4">
-<<<<<<< HEAD
               {jobs.map((job) => (
                 <JobCard key={job.id} job={job} onNavigateRoute={(j) => setActiveNavigationJob(j)} onAccept={() => handleAcceptJob(job)} />
-=======
-              {availableJobs.map((job) => (
-                <JobCard key={job.id} job={job} onNavigateRoute={(j) => setActiveNavigationJob(j)} />
->>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
               ))}
             </div>
           </div>
@@ -376,11 +361,7 @@ function StatCard({ label, value, icon, color }) {
   )
 }
 
-<<<<<<< HEAD
 function JobCard({ job, onNavigateRoute, onAccept }) {
-=======
-function JobCard({ job, onNavigateRoute }) {
->>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
   const urgencyColors = {
     high: 'bg-sunset-100 text-sunset-700',
     medium: 'bg-gold-100 text-gold-700',
@@ -432,14 +413,10 @@ function JobCard({ job, onNavigateRoute }) {
           <Navigation className="w-5 h-5 text-terracotta-600" />
           <span>View Route</span>
         </button>
-<<<<<<< HEAD
         <button 
           onClick={onAccept}
           className="flex-1 px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2"
         >
-=======
-        <button className="flex-1 px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2">
->>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
           <CheckCircle className="w-5 h-5" />
           <span>Accept Job</span>
         </button>
