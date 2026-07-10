@@ -176,9 +176,7 @@ export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-gradient-to-br from-gold-200 via-gold-300 to-sunset-300 z-50" />
-        }>
+        <Suspense fallback={null}>
           <AppInner />
         </Suspense>
       </AuthProvider>
