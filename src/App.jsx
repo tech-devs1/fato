@@ -11,6 +11,7 @@ const FarmerDashboard = lazy(() => import('./components/dashboards/FarmerDashboa
 const BuyerDashboard = lazy(() => import('./components/dashboards/BuyerDashboard'))
 const TransportDashboard = lazy(() => import('./components/dashboards/TransportDashboard'))
 const AdminDashboard = lazy(() => import('./components/dashboards/AdminDashboard'))
+const WelcomeScreen = lazy(() => import('./components/WelcomeScreen'))
 
 // Role to default view mapping
 const ROLE_HOME = {
@@ -36,6 +37,10 @@ function AppInner() {
 
   // splashDone = true once the LoadingScreen animation completes its callback
   const [splashDone,  setSplashDone]  = useState(false)
+  // showWelcome = true only on first ever launch (cleared after user sees it)
+  const [showWelcome, setShowWelcome] = useState(
+    () => !localStorage.getItem('nunya_welcome_seen') && !currentUser
+  )
   const [showLanding, setShowLanding] = useState(false)
   const [showAuth,    setShowAuth]    = useState(() => {
     const saved = localStorage.getItem('nunya_show_auth')
@@ -77,20 +82,37 @@ function AppInner() {
       // Already logged in — go straight to dashboard
       setShowLanding(false)
       setShowAuth(false)
+      setShowWelcome(false) // Skip welcome if already logged in
     } else {
       if (isInstalledPWA()) {
-        // Installed PWA — skip landing page, go straight to sign-in
+        // Installed PWA — skip landing page, go straight to sign-in (or welcome)
         setShowLanding(false)
-        setShowAuth(true)
+        if (showWelcome) {
+          // Welcome shown, auth comes after
+        } else {
+          setShowAuth(true)
+        }
       } else {
         // Browser — show the landing page first
-        setShowLanding(true)
+        setShowLanding(!showWelcome) // delay landing until after welcome
         setShowAuth(false)
       }
     }
   }, [splashDone, authLoading, currentUser])
 
   const handleLoadingComplete = () => setSplashDone(true)
+
+  const handleWelcomeDone = () => {
+    localStorage.setItem('nunya_welcome_seen', '1')
+    setShowWelcome(false)
+    if (!currentUser) {
+      if (isInstalledPWA()) {
+        setShowAuth(true)
+      } else {
+        setShowLanding(true)
+      }
+    }
+  }
 
   const handleContinue = () => {
     setShowLanding(false)
@@ -124,12 +146,17 @@ function AppInner() {
     return <LoadingScreen onComplete={handleLoadingComplete} />
   }
 
-  // ── 1. Landing page ──────────────────────────────────────────────────────────
+  // ── 1. Welcome Screen (first launch only) ────────────────────────────────────
+  if (showWelcome) {
+    return <WelcomeScreen onContinue={handleWelcomeDone} />
+  }
+
+  // ── 2. Landing page ──────────────────────────────────────────────────────────
   if (showLanding) {
     return <LandingPage onContinue={handleContinue} />
   }
 
-  // ── 2. Auth gate ─────────────────────────────────────────────────────────────
+  // ── 3. Auth gate ─────────────────────────────────────────────────────────────
   if (!currentUser || showAuth) {
     return <AuthPage onAuthenticated={handleAuthenticated} />
   }
