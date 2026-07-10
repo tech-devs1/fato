@@ -210,7 +210,7 @@ export function AuthProvider({ children }) {
       const snap = await getDoc(ref)
       
       if (existingOnly && !snap.exists()) {
-        await signOut(auth)
+        // Don't sign out - let the UI handle the redirect to registration
         const err = new Error('No registered account found for this Google email. Please register first.')
         err.code = 'auth/user-not-found'
         throw err
@@ -278,6 +278,17 @@ export function AuthProvider({ children }) {
     setUserFullProfile(null)
   }
 
+  // ── Complete Registration for Already Authenticated User ────────────────────────
+
+  async function completeRegistration(extra = {}) {
+    if (!currentUser) {
+      throw new Error('No authenticated user found')
+    }
+    localStorage.setItem('agro_is_registering', 'true')
+    await createUserDoc(currentUser, extra)
+    localStorage.removeItem('agro_is_registering')
+  }
+
   // ── Auth State Listener & Redirect handler ─────────────────────────────────
 
   useEffect(() => {
@@ -290,7 +301,7 @@ export function AuthProvider({ children }) {
           const snap = await getDoc(ref)
           
           if (loginType === 'existing' && !snap.exists()) {
-            await signOut(auth)
+            // Don't sign out - let the UI handle the redirect to registration
             alert('No registered account found for this Google email. Please register first.')
             return
           }
@@ -322,10 +333,9 @@ export function AuthProvider({ children }) {
           } else {
             const isRegistering = localStorage.getItem('agro_is_registering') === 'true'
             if (!isRegistering) {
-              // Sign out immediately - unregistered user trying to log in directly
-              await signOut(auth)
-              setUserProfile(null)
-              setUserFullProfile(null)
+              // Don't sign out - let the UI handle the redirect to registration
+              // Set a flag so the UI knows to show registration
+              localStorage.setItem('agro_needs_registration', 'true')
             }
           }
         } else {
@@ -380,6 +390,7 @@ export function AuthProvider({ children }) {
     signUp,
     signIn,
     signInWithGoogle,
+    completeRegistration,
     setupRecaptcha,
     sendOTP,
     verifyOTP,

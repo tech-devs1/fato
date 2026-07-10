@@ -90,8 +90,20 @@ function Input({ icon, type = 'text', rightIcon, ...props }) {
 }
 
 export default function AuthPage({ onAuthenticated }) {
+  const { currentUser } = useAuth()
   const [mode, setMode] = useState('login')
   const [selectedRole, setSelectedRole] = useState('farmer')
+
+  // Check if user is authenticated but needs registration
+  useEffect(() => {
+    if (currentUser) {
+      const needsRegistration = localStorage.getItem('agro_needs_registration') === 'true'
+      if (needsRegistration) {
+        localStorage.removeItem('agro_needs_registration')
+        setMode('register_role')
+      }
+    }
+  }, [currentUser])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-ivory-50 via-terracotta-50 to-forest-50 flex items-center justify-center p-4 relative overflow-hidden">
@@ -335,7 +347,7 @@ function RegisterRoleForm({ onSelect, onSwitch }) {
 
 // ── EMAIL REGISTRATION DETAILS FORM ─────────────────────────────────────────────
 function SignupForm({ role, onSwitch, onDone }) {
-  const { signUp, signInWithGoogle } = useAuth()
+  const { currentUser, signUp, signInWithGoogle, completeRegistration } = useAuth()
   const [name, setName]           = useState('')
   const [phone, setPhone]         = useState('+233')
   const [email, setEmail]         = useState('')
@@ -350,6 +362,19 @@ function SignupForm({ role, onSwitch, onDone }) {
   const [ghanaCardFile, setGhanaCardFile]   = useState(null)
   const [licenseFile, setLicenseFile]       = useState(null)
   const [community, setCommunity]           = useState('')
+
+  // Pre-fill email if user is already authenticated (from failed Google login)
+  useEffect(() => {
+    if (currentUser?.email) {
+      setEmail(currentUser.email)
+    }
+    if (currentUser?.displayName) {
+      setName(currentUser.displayName)
+    }
+    if (currentUser?.phoneNumber) {
+      setPhone(currentUser.phoneNumber)
+    }
+  }, [currentUser])
 
   async function handleSignUp(e) {
     e.preventDefault()
@@ -379,8 +404,11 @@ function SignupForm({ role, onSwitch, onDone }) {
       return
     }
 
-    if (password !== confirm) { setError('Passwords do not match'); setBusy(false); return }
-    if (password.length < 6)  { setError('Password must be at least 6 characters'); setBusy(false); return }
+    // Only validate password for new email/password signups
+    if (!currentUser) {
+      if (password !== confirm) { setError('Passwords do not match'); setBusy(false); return }
+      if (password.length < 6)  { setError('Password must be at least 6 characters'); setBusy(false); return }
+    }
     // Transport-specific validation
     if (role === 'transport') {
       if (!ghanaCardId.trim()) { setError('Please enter your Ghana Card ID number.'); setBusy(false); return }
@@ -393,6 +421,9 @@ function SignupForm({ role, onSwitch, onDone }) {
     }
     try {
       const extra = {
+        displayName: name,
+        role: role,
+        phone: phone,
         community: community,
         ...(role === 'transport' ? {
           ghana_card_id: ghanaCardId,
@@ -401,7 +432,14 @@ function SignupForm({ role, onSwitch, onDone }) {
           license_file: licenseFile?.name || null,
         } : {})
       }
-      await signUp(email, password, name, role, phone, extra)
+
+      if (currentUser) {
+        // User is already authenticated (from failed Google login), complete registration
+        await completeRegistration(extra)
+      } else {
+        // Normal email/password registration
+        await signUp(email, password, name, role, phone, extra)
+      }
       onDone()
     } catch (err) {
       setError(friendlyError(err))
@@ -466,9 +504,9 @@ function SignupForm({ role, onSwitch, onDone }) {
 
       <ErrorBanner msg={error} />
 
-      <GoogleBtn onClick={handleGoogle} loading={busy} />
+      {!currentUser && <GoogleBtn onClick={handleGoogle} loading={busy} />}
 
-      <Divider />
+      {!currentUser && <Divider />}
 
       <form onSubmit={handleSignUp} className="space-y-4">
         <Input
@@ -493,33 +531,39 @@ function SignupForm({ role, onSwitch, onDone }) {
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
+          readOnly={!!currentUser}
+          className={currentUser ? 'bg-earth-50' : ''}
         />
-        <Input
-          icon={<Lock className="w-4 h-4" />}
-          type={showPw ? 'text' : 'password'}
-          placeholder="Password (min 6 chars)"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          rightIcon={
-            showPw
-              ? <EyeOff className="w-4 h-4" onClick={() => setShowPw(false)} />
-              : <Eye className="w-4 h-4" onClick={() => setShowPw(true)} />
-          }
-          required
-        />
+        {!currentUser && (
+          <>
+            <Input
+              icon={<Lock className="w-4 h-4" />}
+              type={showPw ? 'text' : 'password'}
+              placeholder="Password (min 6 chars)"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              rightIcon={
+                showPw
+                  ? <EyeOff className="w-4 h-4" onClick={() => setShowPw(false)} />
+                  : <Eye className="w-4 h-4" onClick={() => setShowPw(true)} />
+              }
+              required
+            />
+            <Input
+              icon={<Lock className="w-4 h-4" />}
+              type={showPw ? 'text' : 'password'}
+              placeholder="Confirm password"
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
+              required
+            />
+          </>
+        )}
         <Input
           icon={<MapPin className="w-4 h-4" />}
           placeholder="Community / Location (e.g., Ho, Anloga)"
           value={community}
           onChange={e => setCommunity(e.target.value)}
-          required
-        />
-        <Input
-          icon={<Lock className="w-4 h-4" />}
-          type={showPw ? 'text' : 'password'}
-          placeholder="Confirm password"
-          value={confirm}
-          onChange={e => setConfirm(e.target.value)}
           required
         />
 
