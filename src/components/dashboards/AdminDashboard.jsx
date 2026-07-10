@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Users, Package, Truck, TrendingUp, BarChart3, Settings, AlertTriangle, CheckCircle, Clock, MapPin, ArrowUpRight, ArrowDownRight, Activity, Shield, FileText, Check, X, Phone, Mail, Award, Map, LogOut, Eye, Car, Hash, Calendar, Star } from 'lucide-react'
-import { collection, query, getDocs, getDoc, doc, onSnapshot } from 'firebase/firestore'
+import { Users, Package, Truck, TrendingUp, BarChart3, Settings, AlertTriangle, CheckCircle, Clock, MapPin, ArrowUpRight, ArrowDownRight, Activity, Shield, FileText, Check, X, Phone, Mail, Award, Map, LogOut, Eye, Car, Hash, Calendar, Star, Trash2 } from 'lucide-react'
+import { collection, query, getDocs, getDoc, doc, onSnapshot, deleteDoc } from 'firebase/firestore'
 import { adminUpdateVerification } from '../../lib/reputationService'
 import { db } from '../../lib/firebase'
 import { useAuth } from '../../contexts/AuthContext'
@@ -91,6 +91,34 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
   const [roleProfiles, setRoleProfiles] = useState({})
   const [permissionDenied, setPermissionDenied] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
+
+  const handleDeleteUser = async (userId, userRole, userName) => {
+    if (userRole === 'admin' || userId === 'admin_root') {
+      toast('Cannot delete admin account.', 'error')
+      return
+    }
+
+    if (!window.confirm(`Are you sure you want to permanently delete the user "${userName || 'User'}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      await deleteDoc(doc(db, 'users', userId))
+      await deleteDoc(doc(db, 'verifications', userId))
+      await deleteDoc(doc(db, 'user_reputation', userId))
+      if (userRole === 'farmer') {
+        await deleteDoc(doc(db, 'farmers', userId))
+      } else if (userRole === 'buyer') {
+        await deleteDoc(doc(db, 'buyers', userId))
+      } else if (userRole === 'transport') {
+        await deleteDoc(doc(db, 'transporters', userId))
+      }
+      toast(`User "${userName}" deleted successfully.`, 'success')
+    } catch (err) {
+      console.error("Delete user error:", err)
+      toast(`Failed to delete user: ${err.message}`, 'error')
+    }
+  }
 
   const [userRoleFilter, setUserRoleFilter] = useState('all')
   const [verificationRoleFilter, setVerificationRoleFilter] = useState('all')
@@ -451,6 +479,7 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
                       user={user} 
                       profile={profile}
                       onViewDetails={() => setSelectedUser({ user, profile })} 
+                      onDelete={() => handleDeleteUser(user.id, user.role, user.name)}
                     />
                   )
                 })
@@ -794,7 +823,7 @@ function ActivityItem({ message, time, type }) {
   )
 }
 
-function UserCard({ user, profile, onViewDetails }) {
+function UserCard({ user, profile, onViewDetails, onDelete }) {
   const statusColors = {
     active: 'bg-forest-100 text-forest-700',
     pending: 'bg-gold-100 text-gold-700',
@@ -844,12 +873,23 @@ function UserCard({ user, profile, onViewDetails }) {
           <p className="text-xs text-earth-400 font-medium">Registration Timestamp</p>
           <p className="text-sm font-semibold text-earth-700 mt-0.5">{timestampLabel}</p>
         </div>
-        <button 
-          onClick={onViewDetails}
-          className="px-4 py-2 bg-white text-earth-900 rounded-xl font-semibold hover:bg-earth-100 transition-colors border border-earth-200 text-xs shrink-0 self-end sm:self-auto"
-        >
-          View Details
-        </button>
+        <div className="flex gap-2 shrink-0 self-end sm:self-auto">
+          <button 
+            onClick={onViewDetails}
+            className="px-4 py-2 bg-white text-earth-900 rounded-xl font-semibold hover:bg-earth-100 transition-colors border border-earth-200 text-xs"
+          >
+            View Details
+          </button>
+          {user.role !== 'admin' && user.id !== 'admin_root' && (
+            <button 
+              onClick={onDelete}
+              className="p-2 bg-sunset-50 hover:bg-sunset-100 text-sunset-600 rounded-xl transition-colors border border-sunset-200 flex items-center justify-center"
+              title="Delete User"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
