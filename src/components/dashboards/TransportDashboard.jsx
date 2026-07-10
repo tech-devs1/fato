@@ -1,17 +1,20 @@
 import React, { useState } from 'react'
-<<<<<<< HEAD
-import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation, LogOut } from 'lucide-react'
+import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation, ShoppingBag, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import ReputationCard from '../reputation/ReputationCard'
-=======
-import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation, ShoppingBag, X } from 'lucide-react'
 import MapboxView from '../MapboxView'
->>>>>>> 81cae66 (integrated mapbox for routes)
+import SettingsDropdown from './SettingsDropdown'
+import { useToast } from '../ui/Toast'
 
 export default function TransportDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('jobs')
-<<<<<<< HEAD
   const { userFullProfile, userProfile, logOut } = useAuth()
+  const { toast } = useToast()
+
+  const [startLoc, setStartLoc] = useState('ho')
+  const [endLoc, setEndLoc] = useState('keta')
+  const [activeNavigationJob, setActiveNavigationJob] = useState(null)
+  const [customRouteInfo, setCustomRouteInfo] = useState(null)
 
   const mockProfile = {
     user: { displayName: 'Kofi Mensah' },
@@ -47,12 +50,6 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
     await logOut()
     if (onLogout) onLogout()
   }
-=======
-  const [startLoc, setStartLoc] = useState('ho')
-  const [endLoc, setEndLoc] = useState('keta')
-  const [activeNavigationJob, setActiveNavigationJob] = useState(null)
-  const [customRouteInfo, setCustomRouteInfo] = useState(null)
->>>>>>> 81cae66 (integrated mapbox for routes)
 
   const tabs = [
     { id: 'jobs', label: 'Available Jobs', icon: <Truck className="w-5 h-5" /> },
@@ -62,17 +59,35 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
     { id: 'vehicle', label: 'Vehicle', icon: <Wrench className="w-5 h-5" /> },
   ]
 
-  const availableJobs = [
+  const [jobs, setJobs] = useState([
     { id: 1, from: 'Ho', to: 'Keta', cargo: 'Cassava 200kg', distance: '45 km', payment: '₵150', urgency: 'high', farmer: 'Emmanuel A.' },
     { id: 2, from: 'Anloga', to: 'Ho', cargo: 'Maize 300kg', distance: '32 km', payment: '₵120', urgency: 'medium', farmer: 'Grace K.' },
     { id: 3, from: 'Keta', to: 'Anloga', cargo: 'Tomatoes 150kg', distance: '28 km', payment: '₵100', urgency: 'low', farmer: 'Kofi M.' },
     { id: 4, from: 'Ho', to: 'Keta', cargo: 'Yam 400kg', distance: '45 km', payment: '₵180', urgency: 'high', farmer: 'Comfort D.' },
-  ]
+  ])
 
-  const currentDeliveries = [
+  const [deliveries, setDeliveries] = useState([
     { id: 1, order: '#2846', from: 'Ho', to: 'Keta', cargo: 'Cassava 200kg', progress: 65, status: 'in_transit', eta: '2 hours' },
     { id: 2, order: '#2845', from: 'Anloga', to: 'Ho', cargo: 'Maize 300kg', progress: 30, status: 'loading', eta: '4 hours' },
-  ]
+  ])
+
+  const handleAcceptJob = (job) => {
+    setJobs(prev => prev.filter(j => j.id !== job.id))
+    setDeliveries(prev => [
+      {
+        id: job.id,
+        order: `#${Math.floor(Math.random() * 9000) + 1000}`,
+        from: job.from,
+        to: job.to,
+        cargo: job.cargo,
+        progress: 0,
+        status: 'loading',
+        eta: '3 hours'
+      },
+      ...prev
+    ])
+    toast('Job accepted! Head to Deliveries tab.', 'success')
+  }
 
   const routes = [
     { id: 1, name: 'Ho - Keta Highway', distance: '45 km', avgTime: '1h 15m', popularity: 92, condition: 'good' },
@@ -114,9 +129,7 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
             <div className="px-3 py-1 bg-white/20 rounded-full">
               <p className="text-xs font-semibold text-white">{displayName}</p>
             </div>
-            <button onClick={handleLogout} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
-              <LogOut className="w-5 h-5 text-white" />
-            </button>
+            <SettingsDropdown onLogout={handleLogout} />
           </div>
         </div>
       </header>
@@ -151,16 +164,16 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label="Available Jobs" value="4" icon={<Truck />} color="terracotta" />
+              <StatCard label="Available Jobs" value={jobs.length.toString()} icon={<Truck />} color="terracotta" />
               <StatCard label="Avg Payment" value="₵137" icon={<DollarSign />} color="gold" />
               <StatCard label="Today's Earnings" value="₵320" icon={<DollarSign />} color="forest" />
-              <StatCard label="Active Deliveries" value="2" icon={<Navigation />} color="earth" />
+              <StatCard label="Active Deliveries" value={deliveries.length.toString()} icon={<Navigation />} color="earth" />
             </div>
 
             {/* Available Jobs */}
             <div className="space-y-4">
-              {availableJobs.map((job) => (
-                <JobCard key={job.id} job={job} onNavigateRoute={(j) => setActiveNavigationJob(j)} />
+              {jobs.map((job) => (
+                <JobCard key={job.id} job={job} onNavigateRoute={(j) => setActiveNavigationJob(j)} onAccept={() => handleAcceptJob(job)} />
               ))}
             </div>
           </div>
@@ -171,8 +184,8 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
             <h2 className="text-2xl font-bold text-earth-900">Current Deliveries</h2>
             
             <div className="space-y-4">
-              {currentDeliveries.map((delivery) => (
-                <DeliveryCard key={delivery.id} delivery={delivery} />
+              {deliveries.map((delivery) => (
+                <DeliveryCard key={delivery.id} delivery={delivery} setDeliveries={setDeliveries} />
               ))}
             </div>
           </div>
@@ -348,7 +361,7 @@ function StatCard({ label, value, icon, color }) {
   )
 }
 
-function JobCard({ job, onNavigateRoute }) {
+function JobCard({ job, onNavigateRoute, onAccept }) {
   const urgencyColors = {
     high: 'bg-sunset-100 text-sunset-700',
     medium: 'bg-gold-100 text-gold-700',
@@ -400,7 +413,10 @@ function JobCard({ job, onNavigateRoute }) {
           <Navigation className="w-5 h-5 text-terracotta-600" />
           <span>View Route</span>
         </button>
-        <button className="flex-1 px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2">
+        <button 
+          onClick={onAccept}
+          className="flex-1 px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2"
+        >
           <CheckCircle className="w-5 h-5" />
           <span>Accept Job</span>
         </button>
@@ -409,7 +425,8 @@ function JobCard({ job, onNavigateRoute }) {
   )
 }
 
-function DeliveryCard({ delivery }) {
+function DeliveryCard({ delivery, setDeliveries }) {
+  const { toast } = useToast()
   const statusColors = {
     loading: 'bg-gold-100 text-gold-700',
     in_transit: 'bg-terracotta-100 text-terracotta-700',
@@ -420,6 +437,29 @@ function DeliveryCard({ delivery }) {
     loading: <Clock className="w-4 h-4" />,
     in_transit: <Navigation className="w-4 h-4" />,
     delivered: <CheckCircle className="w-4 h-4" />,
+  }
+
+  const handleUpdateProgress = () => {
+    setDeliveries(prev => prev.map(d => {
+      if (d.id === delivery.id) {
+        let newProgress = d.progress + 25
+        let newStatus = d.status
+        let newEta = d.eta
+
+        if (newProgress >= 100) {
+          newProgress = 100
+          newStatus = 'delivered'
+          newEta = '-'
+          toast(`Delivery for order ${d.order} completed successfully! 🎉`, 'success')
+        } else if (newProgress > 0) {
+          newStatus = 'in_transit'
+          newEta = '1 hour'
+          toast(`Delivery progress updated to ${newProgress}%`, 'info')
+        }
+        return { ...d, progress: newProgress, status: newStatus, eta: newEta }
+      }
+      return d
+    }))
   }
 
   return (
@@ -455,9 +495,19 @@ function DeliveryCard({ delivery }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-sm text-earth-600">
-        <Clock className="w-4 h-4" />
-        <span>ETA: {delivery.eta}</span>
+      <div className="flex items-center justify-between text-sm text-earth-600">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4" />
+          <span>ETA: {delivery.eta}</span>
+        </div>
+        {delivery.status !== 'delivered' && (
+          <button 
+            onClick={handleUpdateProgress}
+            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-xl transition-colors text-xs"
+          >
+            Update Progress
+          </button>
+        )}
       </div>
     </div>
   )

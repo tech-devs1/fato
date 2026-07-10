@@ -1,18 +1,23 @@
 import React, { useState } from 'react'
-<<<<<<< HEAD
-import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle, LogOut } from 'lucide-react'
+import {
+  ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter,
+  MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle,
+  Navigation, X
+} from 'lucide-react'
 import { rankListings } from '../../lib/reputationService'
 import VerificationBadge from '../reputation/VerificationBadge'
 import { useAuth } from '../../contexts/AuthContext'
-=======
-import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle, Navigation } from 'lucide-react'
 import MapboxView, { VOLTA_COORDINATES } from '../MapboxView'
->>>>>>> 81cae66 (integrated mapbox for routes)
+import SettingsDropdown from './SettingsDropdown'
+import { useToast } from '../ui/Toast'
 
 export default function BuyerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('marketplace')
-<<<<<<< HEAD
   const { userProfile, logOut } = useAuth()
+  const { toast } = useToast()
+  const [selectedDelivery, setSelectedDelivery] = useState(null)
+  const [activeFilter, setActiveFilter] = useState('All')
+  const [orderItem, setOrderItem] = useState(null)
 
   const displayName = userProfile?.displayName || 'Buyer'
 
@@ -20,45 +25,43 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
     await logOut()
     if (onLogout) onLogout()
   }
-=======
-  const [selectedDelivery, setSelectedDelivery] = useState(null)
->>>>>>> 81cae66 (integrated mapbox for routes)
 
   const tabs = [
     { id: 'marketplace', label: 'Marketplace', icon: <ShoppingBag className="w-5 h-5" /> },
-    { id: 'orders', label: 'Orders', icon: <Package className="w-5 h-5" /> },
-    { id: 'saved', label: 'Saved', icon: <Heart className="w-5 h-5" /> },
-    { id: 'delivery', label: 'Delivery', icon: <Truck className="w-5 h-5" /> },
-    { id: 'insights', label: 'Insights', icon: <TrendingUp className="w-5 h-5" /> },
+    { id: 'orders',      label: 'Orders',       icon: <Package className="w-5 h-5" /> },
+    { id: 'saved',       label: 'Saved',        icon: <Heart className="w-5 h-5" /> },
+    { id: 'delivery',    label: 'Delivery',     icon: <Truck className="w-5 h-5" /> },
+    { id: 'insights',    label: 'Insights',     icon: <TrendingUp className="w-5 h-5" /> },
   ]
 
   const marketplaceItems = [
-    { id: 1, name: 'Fresh Cassava', farmer: 'Emmanuel A.', location: 'Ho', quantity: '500 kg', price: '₵2.50/kg', freshness: 95, rating: 4.8, image: 'cassava', verification_status: 'Verified Farmer', responseRate: 0.95 },
-    { id: 2, name: 'Organic Tomatoes', farmer: 'Grace K.', location: 'Anloga', quantity: '300 kg', price: '₵4.20/kg', freshness: 92, rating: 4.9, image: 'tomatoes', verification_status: 'Growing Reputation', responseRate: 0.98 },
-    { id: 3, name: 'Yellow Maize', farmer: 'Kofi M.', location: 'Keta', quantity: '750 kg', price: '₵3.10/kg', freshness: 88, rating: 4.7, image: 'maize', verification_status: 'Verified Farmer', responseRate: 0.90 },
-    { id: 4, name: 'Puna Yams', farmer: 'Comfort D.', location: 'Ho', quantity: '400 kg', price: '₵5.80/kg', freshness: 94, rating: 4.6, image: 'yam', verification_status: 'Trusted Farmer', responseRate: 0.99 },
-    { id: 5, name: 'Sweet Potatoes', farmer: 'Samuel T.', location: 'Anloga', quantity: '250 kg', price: '₵3.50/kg', freshness: 90, rating: 4.5, image: 'potato', verification_status: 'New Farmer', responseRate: 0.85 },
-    { id: 6, name: 'Hot Peppers', farmer: 'Beatrice A.', location: 'Keta', quantity: '150 kg', price: '₵6.00/kg', freshness: 96, rating: 4.8, image: 'pepper', verification_status: 'Trusted Farmer', responseRate: 1.00 },
-    { id: 7, name: 'White Yam (New User)', farmer: 'Sena Y.', location: 'Ho', quantity: '200 kg', price: '₵4.50/kg', freshness: 98, rating: 0, verification_status: 'Verified Farmer', isVerified: true, responseRate: 0.95 }
+    { id: 1, name: 'Fresh Cassava',       farmer: 'Emmanuel A.', location: 'Ho',     quantity: '500 kg', price: '₵2.50/kg', freshness: 95, rating: 4.8, verification_status: 'Verified Farmer',    responseRate: 0.95 },
+    { id: 2, name: 'Organic Tomatoes',    farmer: 'Grace K.',    location: 'Anloga', quantity: '300 kg', price: '₵4.20/kg', freshness: 92, rating: 4.9, verification_status: 'Growing Reputation', responseRate: 0.98 },
+    { id: 3, name: 'Yellow Maize',        farmer: 'Kofi M.',     location: 'Keta',   quantity: '750 kg', price: '₵3.10/kg', freshness: 88, rating: 4.7, verification_status: 'Verified Farmer',    responseRate: 0.90 },
+    { id: 4, name: 'Puna Yams',           farmer: 'Comfort D.',  location: 'Ho',     quantity: '400 kg', price: '₵5.80/kg', freshness: 94, rating: 4.6, verification_status: 'Trusted Farmer',    responseRate: 0.99 },
+    { id: 5, name: 'Sweet Potatoes',      farmer: 'Samuel T.',   location: 'Anloga', quantity: '250 kg', price: '₵3.50/kg', freshness: 90, rating: 4.5, verification_status: 'New Farmer',        responseRate: 0.85 },
+    { id: 6, name: 'Hot Peppers',         farmer: 'Beatrice A.', location: 'Keta',   quantity: '150 kg', price: '₵6.00/kg', freshness: 96, rating: 4.8, verification_status: 'Trusted Farmer',    responseRate: 1.00 },
+    { id: 7, name: 'White Yam (New)',     farmer: 'Sena Y.',     location: 'Ho',     quantity: '200 kg', price: '₵4.50/kg', freshness: 98, rating: 0,   verification_status: 'Verified Farmer',  isVerified: true, responseRate: 0.95 },
   ]
 
   const rankedItems = rankListings(marketplaceItems, 'Ho')
 
-  const orders = [
-    { id: 2847, items: 'Cassava 200kg, Tomatoes 100kg', amount: '₵920', status: 'processing', date: 'Today', eta: '2 days' },
-    { id: 2846, items: 'Maize 400kg', amount: '₵1,240', status: 'shipped', date: 'Yesterday', eta: '1 day' },
-    { id: 2845, items: 'Yam 300kg', amount: '₵1,740', status: 'delivered', date: '3 days ago', eta: '-' },
-  ]
+  const [orders, setOrders] = useState([
+    { id: 2847, items: 'Cassava 200kg, Tomatoes 100kg', amount: '₵920',   status: 'processing', date: 'Today',     eta: '2 days' },
+    { id: 2846, items: 'Maize 400kg',                   amount: '₵1,240', status: 'shipped',    date: 'Yesterday', eta: '1 day' },
+    { id: 2845, items: 'Yam 300kg',                     amount: '₵1,740', status: 'delivered',  date: '3 days ago', eta: '-' },
+  ])
+  const [orderFilter, setOrderFilter] = useState('all')
 
   const savedSuppliers = [
-    { id: 1, name: 'Emmanuel A.', location: 'Ho', products: 12, rating: 4.8, reliability: 98 },
-    { id: 2, name: 'Grace K.', location: 'Anloga', products: 8, rating: 4.9, reliability: 99 },
-    { id: 3, name: 'Kofi M.', location: 'Keta', products: 15, rating: 4.7, reliability: 95 },
+    { id: 1, name: 'Emmanuel A.', location: 'Ho',     products: 12, rating: 4.8, reliability: 98 },
+    { id: 2, name: 'Grace K.',    location: 'Anloga', products: 8,  rating: 4.9, reliability: 99 },
+    { id: 3, name: 'Kofi M.',     location: 'Keta',   products: 15, rating: 4.7, reliability: 95 },
   ]
 
   const deliveries = [
-    { id: 1, order: '#2846', from: 'Ho', to: 'Keta', status: 'in_transit', progress: 65, driver: 'Kofi Mensah', eta: 'Tomorrow' },
-    { id: 2, order: '#2847', from: 'Anloga', to: 'Ho', status: 'preparing', progress: 25, driver: 'Pending', eta: '2 days' },
+    { id: 1, order: '#2846', from: 'Ho',     to: 'Keta', status: 'in_transit', progress: 65, driver: 'Kofi Mensah', eta: 'Tomorrow' },
+    { id: 2, order: '#2847', from: 'Anloga', to: 'Ho',   status: 'preparing',  progress: 25, driver: 'Pending',     eta: '2 days' },
   ]
 
   return (
@@ -79,9 +82,7 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
             <div className="px-3 py-1 bg-white/20 rounded-full">
               <p className="text-xs font-semibold text-white">{displayName}</p>
             </div>
-            <button onClick={handleLogout} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
-              <LogOut className="w-5 h-5 text-white" />
-            </button>
+            <SettingsDropdown onLogout={handleLogout} />
           </div>
         </div>
       </header>
@@ -123,46 +124,70 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
 
             {/* Filters */}
             <div className="flex gap-2 overflow-x-auto pb-2">
-              <FilterButton label="All" active />
-              <FilterButton label="Vegetables" />
-              <FilterButton label="Root Crops" />
-              <FilterButton label="Fruits" />
-              <FilterButton label="Grains" />
+              {['All','Vegetables','Root Crops','Fruits','Grains'].map(f => (
+                <FilterButton key={f} label={f} active={activeFilter === f} onClick={() => setActiveFilter(f)} />
+              ))}
             </div>
 
             {/* Marketplace Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rankedItems.map((item) => (
-                <MarketplaceCard key={item.id} item={item} />
-              ))}
+              {rankedItems
+                .filter(item => activeFilter === 'All' || (
+                  activeFilter === 'Vegetables' ? ['Tomatoes','Hot Peppers'].includes(item.name) :
+                  activeFilter === 'Root Crops' ? ['Cassava','Puna Yams','Sweet Potatoes','White Yam (New)'].includes(item.name) :
+                  activeFilter === 'Grains' ? ['Yellow Maize'].includes(item.name) : true
+                ))
+                .map((item) => (
+                  <MarketplaceCard key={item.id} item={item} onOrder={setOrderItem} />
+                ))}
             </div>
           </div>
         )}
 
         {activeTab === 'orders' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <h2 className="text-2xl font-bold text-earth-900">My Orders</h2>
               <div className="flex gap-2">
-                <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl font-medium hover:bg-earth-100 transition-colors">
-                  <Filter className="w-5 h-5" />
-                  <span>Filter</span>
-                </button>
+                {['all','processing','shipped','delivered'].map(f => (
+                  <button key={f} onClick={() => setOrderFilter(f)} className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                    orderFilter === f ? 'bg-indigo-600 text-white' : 'bg-white text-earth-600 hover:bg-indigo-50 border border-earth-200'
+                  }`}>
+                    {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="grid gap-4">
-              {orders.map((order) => (
-                <BuyerOrderCard key={order.id} order={order} />
-              ))}
-            </div>
+            {orders.filter(o => orderFilter === 'all' || o.status === orderFilter).length === 0 ? (
+              <div className="glass rounded-2xl p-10 text-center">
+                <Package className="w-12 h-12 text-earth-300 mx-auto mb-3" />
+                <p className="text-earth-500">No {orderFilter} orders yet.</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {orders
+                  .filter(o => orderFilter === 'all' || o.status === orderFilter)
+                  .map((order) => (
+                    <BuyerOrderCard
+                      key={order.id}
+                      order={order}
+                      onCancel={(id) => {
+                        setOrders(prev => prev.filter(o => o.id !== id))
+                        toast('Order cancelled successfully.', 'error')
+                      }}
+                      onTrack={() => setActiveTab('delivery')}
+                    />
+                  ))}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'saved' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Saved Suppliers</h2>
-            
+
             <div className="grid gap-4">
               {savedSuppliers.map((supplier) => (
                 <SupplierCard key={supplier.id} supplier={supplier} />
@@ -174,7 +199,7 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
         {activeTab === 'delivery' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Delivery Tracking</h2>
-            
+
             {selectedDelivery ? (
               <div className="glass rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -228,12 +253,12 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
                 <p className="text-sm text-earth-600">Select any delivery card below to start live map tracking.</p>
               </div>
             )}
-            
+
             <div className="grid gap-4 md:grid-cols-2">
               {deliveries.map((delivery) => (
-                <DeliveryCard 
-                  key={delivery.id} 
-                  delivery={delivery} 
+                <DeliveryCard
+                  key={delivery.id}
+                  delivery={delivery}
                   isSelected={selectedDelivery?.id === delivery.id}
                   onSelect={() => setSelectedDelivery(delivery)}
                 />
@@ -245,13 +270,13 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
         {activeTab === 'insights' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Market Insights</h2>
-            
+
             <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-earth-900 mb-4">Price Trends</h3>
               <div className="space-y-4">
                 <PriceTrend product="Cassava" current="₵2.50/kg" trend="+12%" status="up" />
-                <PriceTrend product="Tomatoes" current="₵4.20/kg" trend="+8%" status="up" />
-                <PriceTrend product="Maize" current="₵3.10/kg" trend="-3%" status="down" />
+                <PriceTrend product="Tomatoes" current="₵4.20/kg" trend="+8%"  status="up" />
+                <PriceTrend product="Maize"    current="₵3.10/kg" trend="-3%"  status="down" />
               </div>
             </div>
 
@@ -270,19 +295,43 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
       {/* Buyer Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 border-t border-indigo-100 px-6 py-3" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-around">
-          <NavItem icon={<ShoppingBag className="w-6 h-6" />} label="Market" active={activeTab === 'marketplace'} color="#4338ca" onClick={() => setActiveTab('marketplace')} />
-          <NavItem icon={<Package className="w-6 h-6" />} label="Orders" active={activeTab === 'orders'} color="#4338ca" onClick={() => setActiveTab('orders')} />
-          <NavItem icon={<Truck className="w-6 h-6" />} label="Delivery" active={activeTab === 'delivery'} color="#4338ca" onClick={() => setActiveTab('delivery')} />
-          <NavItem icon={<Heart className="w-6 h-6" />} label="Saved" active={activeTab === 'saved'} color="#4338ca" onClick={() => setActiveTab('saved')} />
+          <NavItem icon={<ShoppingBag className="w-6 h-6" />} label="Market"   active={activeTab === 'marketplace'} color="#4338ca" onClick={() => setActiveTab('marketplace')} />
+          <NavItem icon={<Package className="w-6 h-6" />}     label="Orders"   active={activeTab === 'orders'}      color="#4338ca" onClick={() => setActiveTab('orders')} />
+          <NavItem icon={<Truck className="w-6 h-6" />}       label="Delivery" active={activeTab === 'delivery'}    color="#4338ca" onClick={() => setActiveTab('delivery')} />
+          <NavItem icon={<Heart className="w-6 h-6" />}       label="Saved"    active={activeTab === 'saved'}       color="#4338ca" onClick={() => setActiveTab('saved')} />
         </div>
       </nav>
+
+      {/* Order Confirmation Modal */}
+      {orderItem && (
+        <OrderConfirmModal
+          item={orderItem}
+          onClose={() => setOrderItem(null)}
+          onConfirm={(qty) => {
+            const priceNum = parseFloat(orderItem.price.replace(/[^\d.]/g, '')) || 0
+            const total = (priceNum * qty).toFixed(2)
+            const newOrder = {
+              id: Date.now(),
+              items: `${orderItem.name} ${qty}kg`,
+              amount: `₵${total}`,
+              status: 'processing',
+              date: 'Just now',
+              eta: '2 days',
+            }
+            setOrders(prev => [newOrder, ...prev])
+            toast(`Order placed for ${orderItem.name}! 🎉`, 'success')
+            setOrderItem(null)
+            setActiveTab('orders')
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function FilterButton({ label, active }) {
+function FilterButton({ label, active, onClick }) {
   return (
-    <button className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${
+    <button onClick={onClick} className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 whitespace-nowrap ${
       active ? 'bg-terracotta-600 text-white' : 'bg-white text-earth-600 hover:bg-earth-100'
     }`}>
       {label}
@@ -290,14 +339,14 @@ function FilterButton({ label, active }) {
   )
 }
 
-function MarketplaceCard({ item }) {
+function MarketplaceCard({ item, onOrder }) {
   return (
     <div className="glass rounded-2xl overflow-hidden hover:scale-[1.02] transition-transform duration-300">
       {/* Image Placeholder */}
       <div className="h-48 bg-gradient-to-br from-terracotta-100 to-forest-100 flex items-center justify-center">
         <Package className="w-16 h-16 text-terracotta-400" />
       </div>
-      
+
       <div className="p-4">
         <div className="flex items-start justify-between mb-2">
           <div>
@@ -312,12 +361,12 @@ function MarketplaceCard({ item }) {
             <span className="text-sm font-medium text-earth-900">{item.rating}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2 text-sm text-earth-600 mb-3">
           <MapPin className="w-4 h-4" />
           <span>{item.location}</span>
         </div>
-        
+
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-xs text-earth-500">Available</p>
@@ -331,7 +380,7 @@ function MarketplaceCard({ item }) {
 
         <div className="flex items-center gap-2 mb-4">
           <div className="flex-1 h-2 bg-earth-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-forest-500 to-forest-600 rounded-full"
               style={{ width: `${item.freshness}%` }}
             />
@@ -339,7 +388,7 @@ function MarketplaceCard({ item }) {
           <span className="text-sm font-medium text-forest-600">{item.freshness}% fresh</span>
         </div>
 
-        <button className="w-full px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2">
+        <button onClick={() => onOrder(item)} className="w-full px-4 py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors flex items-center justify-center gap-2">
           <span>Add to Order</span>
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -348,17 +397,17 @@ function MarketplaceCard({ item }) {
   )
 }
 
-function BuyerOrderCard({ order }) {
+function BuyerOrderCard({ order, onCancel, onTrack }) {
   const statusColors = {
     processing: 'bg-gold-100 text-gold-700',
-    shipped: 'bg-terracotta-100 text-terracotta-700',
-    delivered: 'bg-forest-100 text-forest-700',
+    shipped:    'bg-terracotta-100 text-terracotta-700',
+    delivered:  'bg-forest-100 text-forest-700',
   }
 
   const statusIcons = {
     processing: <Clock className="w-4 h-4" />,
-    shipped: <Truck className="w-4 h-4" />,
-    delivered: <CheckCircle className="w-4 h-4" />,
+    shipped:    <Truck className="w-4 h-4" />,
+    delivered:  <CheckCircle className="w-4 h-4" />,
   }
 
   return (
@@ -373,21 +422,50 @@ function BuyerOrderCard({ order }) {
           <span>{order.status}</span>
         </span>
       </div>
-      
+
       <div className="flex items-end justify-between mb-4">
         <p className="text-sm text-earth-500">{order.date}</p>
         <p className="text-xl font-bold text-earth-900">{order.amount}</p>
       </div>
 
-      <div className="flex items-center gap-2 text-sm text-earth-600">
+      <div className="flex items-center gap-2 text-sm text-earth-600 mb-4">
         <Clock className="w-4 h-4" />
         <span>ETA: {order.eta}</span>
+      </div>
+
+      <div className="flex gap-2">
+        {order.status === 'shipped' && (
+          <button
+            onClick={onTrack}
+            className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1"
+          >
+            <Navigation className="w-4 h-4" />
+            Track Delivery
+          </button>
+        )}
+        {order.status === 'processing' && (
+          <button
+            onClick={() => onCancel(order.id)}
+            className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors border border-red-200"
+          >
+            Cancel Order
+          </button>
+        )}
+        {order.status === 'delivered' && (
+          <button
+            className="flex-1 px-3 py-2 bg-forest-50 text-forest-700 rounded-xl text-sm font-medium hover:bg-forest-100 transition-colors border border-forest-200"
+            onClick={() => {}}
+          >
+            ✓ Delivered
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
 function SupplierCard({ supplier }) {
+  const { toast } = useToast()
   return (
     <div className="glass rounded-2xl p-6 hover:scale-[1.02] transition-transform duration-300">
       <div className="flex items-start justify-between mb-4">
@@ -403,7 +481,7 @@ function SupplierCard({ supplier }) {
           <span className="text-sm font-medium text-earth-900">{supplier.rating}</span>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
           <p className="text-xs text-earth-500 mb-1">Products</p>
@@ -415,7 +493,10 @@ function SupplierCard({ supplier }) {
         </div>
       </div>
 
-      <button className="flex-1 px-4 py-2 bg-white text-earth-900 rounded-xl font-medium hover:bg-earth-100 transition-colors border border-earth-200 flex items-center justify-center gap-2">
+      <button
+        onClick={() => toast(`Viewing ${supplier.name}'s product catalogue...`, 'info')}
+        className="flex-1 w-full px-4 py-2 bg-white text-earth-900 rounded-xl font-medium hover:bg-earth-100 transition-colors border border-earth-200 flex items-center justify-center gap-2"
+      >
         <span>View Products</span>
         <ChevronRight className="w-4 h-4" />
       </button>
@@ -425,13 +506,13 @@ function SupplierCard({ supplier }) {
 
 function DeliveryCard({ delivery, isSelected, onSelect }) {
   const statusColors = {
-    preparing: 'bg-gold-100 text-gold-700',
+    preparing:  'bg-gold-100 text-gold-700',
     in_transit: 'bg-terracotta-100 text-terracotta-700',
-    delivered: 'bg-forest-100 text-forest-700',
+    delivered:  'bg-forest-100 text-forest-700',
   }
 
   return (
-    <div 
+    <div
       onClick={onSelect}
       className={`glass rounded-2xl p-6 cursor-pointer hover:scale-[1.02] transition-all duration-300 ${
         isSelected ? 'ring-2 ring-terracotta-500 border-transparent shadow-lg bg-terracotta-50/20' : ''
@@ -451,14 +532,14 @@ function DeliveryCard({ delivery, isSelected, onSelect }) {
           {delivery.status.replace('_', ' ')}
         </span>
       </div>
-      
+
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-earth-600">Progress</span>
           <span className="text-sm font-medium text-earth-900">{delivery.progress}%</span>
         </div>
         <div className="h-2 bg-earth-200 rounded-full overflow-hidden">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-terracotta-500 to-forest-500 rounded-full transition-all duration-500"
             style={{ width: `${delivery.progress}%` }}
           />
@@ -507,3 +588,93 @@ function NavItem({ icon, label, active, onClick, color = '#c1440e' }) {
     </button>
   )
 }
+
+function OrderConfirmModal({ item, onClose, onConfirm }) {
+  const [qty, setQty] = useState(1)
+  
+  const numericQty = parseInt(item.quantity) || 100
+  const maxQty = Math.min(numericQty, 1000)
+
+  const pricePerUnit = parseFloat(item.price.replace(/[^\d.]/g, '')) || 1.0
+
+  return (
+    <div className="fixed inset-0 bg-earth-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+        <div className="px-6 py-4 border-b border-earth-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #312e81, #4338ca)' }}>
+          <h3 className="font-bold text-white text-lg flex items-center gap-2">
+            <ShoppingBag className="w-5 h-5" />
+            <span>Confirm Your Purchase</span>
+          </h3>
+          <button onClick={onClose} className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors">
+            <X className="w-5 h-5 text-white" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4 text-earth-800">
+          <div>
+            <h4 className="font-bold text-xl text-earth-900">{item.name}</h4>
+            <p className="text-sm text-earth-500">Sold by {item.farmer} • {item.location}</p>
+          </div>
+
+          <div className="bg-earth-50 p-4 rounded-2xl flex items-center justify-between">
+            <div>
+              <p className="text-xs text-earth-500">Unit Price</p>
+              <p className="font-semibold text-lg text-earth-900">{item.price}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-earth-500">Available Stock</p>
+              <p className="font-semibold text-lg text-earth-900">{item.quantity}</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-2">Order Quantity</label>
+            <div className="flex items-center gap-4">
+              <button 
+                type="button" 
+                onClick={() => setQty(q => Math.max(1, q - 1))}
+                className="w-10 h-10 bg-earth-100 hover:bg-earth-200 rounded-xl font-bold text-lg flex items-center justify-center transition-colors"
+              >
+                -
+              </button>
+              <span className="font-bold text-2xl w-12 text-center">{qty}</span>
+              <button 
+                type="button" 
+                onClick={() => setQty(q => Math.min(maxQty, q + 1))}
+                className="w-10 h-10 bg-earth-100 hover:bg-earth-200 rounded-xl font-bold text-lg flex items-center justify-center transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-earth-100 flex justify-between items-end">
+            <div>
+              <p className="text-sm text-earth-500 font-medium">Estimated Total:</p>
+              <p className="text-xs text-earth-400">Excludes shipping fee</p>
+            </div>
+            <p className="text-2xl font-bold text-indigo-600">₵{(qty * pricePerUnit).toFixed(2)}</p>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 border border-earth-200 rounded-xl text-earth-700 font-semibold hover:bg-earth-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(qty)}
+              className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200"
+            >
+              Confirm Order
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+

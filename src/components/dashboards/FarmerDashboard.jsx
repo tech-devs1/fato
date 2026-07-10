@@ -1,18 +1,29 @@
-import React, { useState } from 'react'
-<<<<<<< HEAD
-import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets, LogOut, Bell } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import {
+  Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search,
+  Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer,
+  Droplets, Bell, Navigation, X, Loader2
+} from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import ReputationCard from '../reputation/ReputationCard'
-=======
-import { Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search, Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer, Droplets, Navigation } from 'lucide-react'
 import MapboxView from '../MapboxView'
->>>>>>> 81cae66 (integrated mapbox for routes)
+import SettingsDropdown from './SettingsDropdown'
+import { useToast } from '../ui/Toast'
 
 export default function FarmerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview')
-<<<<<<< HEAD
   const { userFullProfile, userProfile, logOut } = useAuth()
-
+  const { toast } = useToast()
+  const [startLoc, setStartLoc] = useState('ho')
+  const [endLoc, setEndLoc] = useState('keta')
+  const [routeInfo, setRouteInfo] = useState(null)
+  
+  // Produce modal state
+  const [produceModalMode, setProduceModalMode] = useState(null) // null | 'add' | 'edit'
+  const [selectedProduce, setSelectedProduce] = useState(null)
+  
+  // Transport request state
+  const [showTransportModal, setShowTransportModal] = useState(false)
   const mockProfile = {
     user: { displayName: 'Emmanuel A.' },
     verification: {
@@ -45,42 +56,52 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
     await logOut()
     if (onLogout) onLogout()
   }
-=======
-  const [startLoc, setStartLoc] = useState('ho')
-  const [endLoc, setEndLoc] = useState('keta')
-  const [routeInfo, setRouteInfo] = useState(null)
->>>>>>> 81cae66 (integrated mapbox for routes)
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: <Sprout className="w-5 h-5" /> },
-    { id: 'produce', label: 'My Produce', icon: <Package className="w-5 h-5" /> },
-    { id: 'orders', label: 'Orders', icon: <CheckCircle className="w-5 h-5" /> },
-    { id: 'transport', label: 'Transport', icon: <Truck className="w-5 h-5" /> },
-    { id: 'insights', label: 'Insights', icon: <TrendingUp className="w-5 h-5" /> },
-    { id: 'health', label: 'Post-Harvest', icon: <Heart className="w-5 h-5" /> },
+    { id: 'overview',  label: 'Overview',     icon: <Sprout className="w-5 h-5" /> },
+    { id: 'produce',   label: 'My Produce',   icon: <Package className="w-5 h-5" /> },
+    { id: 'orders',    label: 'Orders',        icon: <CheckCircle className="w-5 h-5" /> },
+    { id: 'transport', label: 'Transport',     icon: <Truck className="w-5 h-5" /> },
+    { id: 'insights',  label: 'Insights',      icon: <TrendingUp className="w-5 h-5" /> },
+    { id: 'health',    label: 'Post-Harvest',  icon: <Heart className="w-5 h-5" /> },
   ]
 
-  const myProduce = [
-    { id: 1, name: 'Cassava', quantity: '500 kg', price: '₵2.50/kg', freshness: 95, status: 'listed', location: 'Ho' },
-    { id: 2, name: 'Tomatoes', quantity: '300 kg', price: '₵4.20/kg', freshness: 88, status: 'listed', location: 'Ho' },
-    { id: 3, name: 'Maize', quantity: '750 kg', price: '₵3.10/kg', freshness: 92, status: 'pending', location: 'Anloga' },
-  ]
+  const [myProduce, setMyProduce] = useState([
+    { id: 1, name: 'Cassava',  quantity: '500 kg', price: '₵2.50/kg', freshness: 95, status: 'listed',  location: 'Ho' },
+    { id: 2, name: 'Tomatoes', quantity: '300 kg', price: '₵4.20/kg', freshness: 88, status: 'listed',  location: 'Ho' },
+    { id: 3, name: 'Maize',    quantity: '750 kg', price: '₵3.10/kg', freshness: 92, status: 'pending', location: 'Anloga' },
+  ])
 
-  const orders = [
-    { id: 2847, buyer: 'Keta Market Co.', items: 'Cassava 200kg', amount: '₵500', status: 'confirmed', date: 'Today' },
-    { id: 2846, buyer: 'Ho Foods Ltd', items: 'Tomatoes 150kg', amount: '₵630', status: 'delivering', date: 'Yesterday' },
-    { id: 2845, buyer: 'Anloga Export', items: 'Maize 400kg', amount: '₵1,240', status: 'completed', date: '2 days ago' },
-  ]
+  function handleSaveProduce(newItem) {
+    if (produceModalMode === 'edit') {
+      setMyProduce(prev => prev.map(p => p.id === selectedProduce.id ? { ...p, ...newItem } : p))
+      toast(`${newItem.name} updated successfully!`, 'success')
+    } else {
+      setMyProduce(prev => [{ id: Date.now(), ...newItem, status: 'listed' }, ...prev])
+      toast(`${newItem.name} added to listings!`, 'success')
+    }
+    setProduceModalMode(null)
+    setSelectedProduce(null)
+    setActiveTab('produce')
+  }
 
-  const transportRequests = [
-    { id: 1, from: 'Ho', to: 'Keta', cargo: 'Cassava 200kg', status: 'matched', driver: 'Kofi Mensah' },
-    { id: 2, from: 'Anloga', to: 'Ho', cargo: 'Maize 300kg', status: 'pending', driver: null },
-  ]
+  const [orders, setOrders] = useState([
+    { id: 2847, buyer: 'Keta Market Co.', items: 'Cassava 200kg',   amount: '₵500',   status: 'confirmed',  date: 'Today' },
+    { id: 2846, buyer: 'Ho Foods Ltd',    items: 'Tomatoes 150kg',  amount: '₵630',   status: 'delivering', date: 'Yesterday' },
+    { id: 2845, buyer: 'Anloga Export',   items: 'Maize 400kg',     amount: '₵1,240', status: 'completed',  date: '2 days ago' },
+  ])
 
+  const [orderFilter, setOrderFilter] = useState('all')
+  const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter)
+
+  const [transportRequests, setTransportRequests] = useState([
+    { id: 1, from: 'Ho',     to: 'Keta', cargo: 'Cassava 200kg', status: 'matched', driver: 'Kofi Mensah' },
+    { id: 2, from: 'Anloga', to: 'Ho',   cargo: 'Maize 300kg',   status: 'pending', driver: null },
+  ])
   const postHarvestHealth = [
-    { produce: 'Cassava', freshness: 95, spoilageRisk: 'low', storageTemp: '25°C', humidity: '65%', recommendation: 'Optimal' },
+    { produce: 'Cassava',  freshness: 95, spoilageRisk: 'low',    storageTemp: '25°C', humidity: '65%', recommendation: 'Optimal' },
     { produce: 'Tomatoes', freshness: 88, spoilageRisk: 'medium', storageTemp: '22°C', humidity: '70%', recommendation: 'Sell within 3 days' },
-    { produce: 'Maize', freshness: 92, spoilageRisk: 'low', storageTemp: '20°C', humidity: '60%', recommendation: 'Optimal' },
+    { produce: 'Maize',    freshness: 92, spoilageRisk: 'low',    storageTemp: '20°C', humidity: '60%', recommendation: 'Optimal' },
   ]
 
   return (
@@ -101,9 +122,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
             <div className="px-3 py-1 bg-white/20 rounded-full">
               <p className="text-xs font-semibold text-white">{displayName}</p>
             </div>
-            <button onClick={handleLogout} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
-              <LogOut className="w-5 h-5 text-white" />
-            </button>
+            <SettingsDropdown onLogout={handleLogout} />
           </div>
         </div>
       </header>
@@ -139,17 +158,17 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <StatCard label="Total Produce" value="1,550 kg" change="+12%" icon={<Package />} color="terracotta" />
-              <StatCard label="Active Orders" value="3" change="+1" icon={<CheckCircle />} color="forest" />
-              <StatCard label="Revenue" value="₵2,370" change="+18%" icon={<TrendingUp />} color="gold" />
-              <StatCard label="Avg Freshness" value="92%" change="+2%" icon={<Heart />} color="earth" />
+              <StatCard label="Active Orders" value="3"        change="+1"   icon={<CheckCircle />} color="forest" />
+              <StatCard label="Revenue"       value="₵2,370"  change="+18%" icon={<TrendingUp />} color="gold" />
+              <StatCard label="Avg Freshness" value="92%"     change="+2%"  icon={<Heart />} color="earth" />
             </div>
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <QuickAction icon={<Plus />} label="Add Produce" color="terracotta" />
-              <QuickAction icon={<Truck />} label="Request Transport" color="forest" />
-              <QuickAction icon={<Search />} label="Find Buyers" color="gold" />
-              <QuickAction icon={<TrendingUp />} label="View Prices" color="earth" />
+              <QuickAction icon={<Plus />}      label="Add Produce"       color="terracotta" onClick={() => setProduceModalMode('add')} />
+              <QuickAction icon={<Truck />}     label="Request Transport" color="forest"    onClick={() => setActiveTab('transport')} />
+              <QuickAction icon={<Search />}    label="Find Buyers"       color="gold"      onClick={() => setActiveTab('insights')} />
+              <QuickAction icon={<TrendingUp />} label="View Prices"      color="earth"     onClick={() => setActiveTab('insights')} />
             </div>
 
             {/* Recent Activity */}
@@ -157,7 +176,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
               <h2 className="text-lg font-bold text-earth-900 mb-4">Recent Activity</h2>
               <div className="space-y-3">
                 <ActivityItem message="Order #2847 confirmed by Keta Market Co." time="2 hours ago" type="success" />
-                <ActivityItem message="Cassava freshness updated to 95%" time="4 hours ago" type="info" />
+                <ActivityItem message="Cassava freshness updated to 95%"         time="4 hours ago" type="info" />
                 <ActivityItem message="Transport request matched with Kofi Mensah" time="6 hours ago" type="success" />
               </div>
             </div>
@@ -168,7 +187,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-earth-900">My Produce</h2>
-              <button className="flex items-center gap-2 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
+              <button onClick={() => setProduceModalMode('add')} className="flex items-center gap-2 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
                 <Plus className="w-5 h-5" />
                 <span>Add Produce</span>
               </button>
@@ -176,7 +195,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
 
             <div className="grid gap-4">
               {myProduce.map((produce) => (
-                <ProduceCard key={produce.id} produce={produce} />
+                <ProduceCard key={produce.id} produce={produce} onDelete={(id) => setMyProduce(prev => prev.filter(p => p.id !== id))} onEdit={(p) => { setSelectedProduce(p); setProduceModalMode('edit') }} />
               ))}
             </div>
           </div>
@@ -187,16 +206,22 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-earth-900">Orders</h2>
               <div className="flex gap-2">
-                <button className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl font-medium hover:bg-earth-100 transition-colors">
-                  <Filter className="w-5 h-5" />
-                  <span>Filter</span>
-                </button>
+                {['all', 'confirmed', 'delivering', 'completed'].map(f => (
+                  <button key={f} onClick={() => setOrderFilter(f)} className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                    orderFilter === f ? 'bg-forest-600 text-white' : 'bg-white text-earth-600 hover:bg-earth-100 border border-earth-200'
+                  }`}>
+                    {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
 
             <div className="grid gap-4">
-              {orders.map((order) => (
-                <OrderCard key={order.id} order={order} />
+              {filteredOrders.map((order) => (
+                <OrderCard key={order.id} order={order} onUpdateStatus={(id, newStatus) => {
+                  setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o))
+                  toast(`Order #${id} marked as ${newStatus}!`, 'success')
+                }} />
               ))}
             </div>
           </div>
@@ -206,7 +231,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-earth-900">Transport & Cost Estimator</h2>
-              <button className="flex items-center gap-2 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
+              <button onClick={() => setShowTransportModal(true)} className="flex items-center gap-2 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
                 <Plus className="w-5 h-5" />
                 <span>New Request</span>
               </button>
@@ -225,8 +250,8 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
 
                 <div>
                   <label className="block text-xs font-semibold text-earth-500 mb-1.5">Pickup Hub</label>
-                  <select 
-                    value={startLoc} 
+                  <select
+                    value={startLoc}
                     onChange={(e) => setStartLoc(e.target.value)}
                     className="w-full px-4 py-3 bg-earth-50 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-earth-800 font-medium"
                   >
@@ -240,8 +265,8 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
 
                 <div>
                   <label className="block text-xs font-semibold text-earth-500 mb-1.5">Delivery Hub</label>
-                  <select 
-                    value={endLoc} 
+                  <select
+                    value={endLoc}
                     onChange={(e) => setEndLoc(e.target.value)}
                     className="w-full px-4 py-3 bg-earth-50 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-terracotta-500 text-earth-800 font-medium"
                   >
@@ -286,7 +311,14 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
             <h3 className="text-xl font-bold text-earth-900 pt-4">Recent Transport Logs</h3>
             <div className="grid gap-4">
               {transportRequests.map((request) => (
-                <TransportCard key={request.id} request={request} />
+                <TransportCard
+                  key={request.id}
+                  request={request}
+                  onCancel={(id) => {
+                    setTransportRequests(prev => prev.filter(r => r.id !== id))
+                    toast('Transport request cancelled.', 'error')
+                  }}
+                />
               ))}
             </div>
           </div>
@@ -295,13 +327,13 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
         {activeTab === 'insights' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Market Insights</h2>
-            
+
             <div className="glass rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-earth-900 mb-4">Price Trends</h3>
               <div className="space-y-4">
                 <PriceTrend product="Cassava" current="₵2.50/kg" trend="+12%" status="up" />
-                <PriceTrend product="Tomatoes" current="₵4.20/kg" trend="+8%" status="up" />
-                <PriceTrend product="Maize" current="₵3.10/kg" trend="-3%" status="down" />
+                <PriceTrend product="Tomatoes" current="₵4.20/kg" trend="+8%"  status="up" />
+                <PriceTrend product="Maize"    current="₵3.10/kg" trend="-3%"  status="down" />
               </div>
             </div>
 
@@ -319,7 +351,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
         {activeTab === 'health' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Post-Harvest Health</h2>
-            
+
             <div className="grid gap-4">
               {postHarvestHealth.map((item, index) => (
                 <HealthCard key={index} health={item} />
@@ -332,22 +364,55 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
       {/* Farmer Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 border-t border-green-100 px-6 py-3" style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-around">
-          <NavItem icon={<Sprout className="w-6 h-6" />} label="Dashboard" active={true} color="#2d6a4f" onClick={() => setActiveTab('overview')} />
-          <NavItem icon={<Package className="w-6 h-6" />} label="Produce" onClick={() => setActiveTab('produce')} />
-          <NavItem icon={<CheckCircle className="w-6 h-6" />} label="Orders" onClick={() => setActiveTab('orders')} />
-          <NavItem icon={<Heart className="w-6 h-6" />} label="Health" onClick={() => setActiveTab('health')} />
+          <NavItem icon={<Sprout className="w-6 h-6" />}       label="Dashboard" active={activeTab === 'overview'}   color="#2d6a4f" onClick={() => setActiveTab('overview')} />
+          <NavItem icon={<Package className="w-6 h-6" />}      label="Produce"   active={activeTab === 'produce'}    color="#2d6a4f" onClick={() => setActiveTab('produce')} />
+          <NavItem icon={<CheckCircle className="w-6 h-6" />}  label="Orders"    active={activeTab === 'orders'}     color="#2d6a4f" onClick={() => setActiveTab('orders')} />
+          <NavItem icon={<Heart className="w-6 h-6" />}        label="Health"    active={activeTab === 'health'}     color="#2d6a4f" onClick={() => setActiveTab('health')} />
         </div>
       </nav>
-    </div>
+      {/* Add/Edit Produce Modal */}
+      {produceModalMode && (
+        <AddProduceModal
+          mode={produceModalMode}
+          produce={selectedProduce}
+          onClose={() => { setProduceModalMode(null); setSelectedProduce(null) }}
+          onSave={handleSaveProduce}
+        />
+      )}
+
+      {/* Transport Request Modal */}
+      {showTransportModal && (
+        <TransportRequestModal
+          startLoc={startLoc}
+          endLoc={endLoc}
+          produceList={myProduce}
+          onClose={() => setShowTransportModal(false)}
+          onSubmit={(req) => {
+            setTransportRequests(prev => [
+              {
+                id: Date.now(),
+                from: req.from,
+                to: req.to,
+                cargo: `${req.produceName} ${req.quantity}`,
+                status: 'pending',
+                driver: null
+              },
+              ...prev
+            ])
+            setShowTransportModal(false)
+            toast('Transport request submitted successfully! Matching with drivers...', 'success')
+          }}
+        />
+      )}    </div>
   )
 }
 
 function StatCard({ label, value, change, icon, color }) {
   const colorClasses = {
     terracotta: 'from-terracotta-500 to-terracotta-600 bg-terracotta-50',
-    forest: 'from-forest-500 to-forest-600 bg-forest-50',
-    gold: 'from-gold-500 to-gold-600 bg-gold-50',
-    earth: 'from-earth-500 to-earth-600 bg-earth-50',
+    forest:     'from-forest-500 to-forest-600 bg-forest-50',
+    gold:       'from-gold-500 to-gold-600 bg-gold-50',
+    earth:      'from-earth-500 to-earth-600 bg-earth-50',
   }
 
   return (
@@ -364,16 +429,16 @@ function StatCard({ label, value, change, icon, color }) {
   )
 }
 
-function QuickAction({ icon, label, color }) {
+function QuickAction({ icon, label, color, onClick }) {
   const colorClasses = {
     terracotta: 'bg-terracotta-50 text-terracotta-600 hover:bg-terracotta-100',
-    forest: 'bg-forest-50 text-forest-600 hover:bg-forest-100',
-    gold: 'bg-gold-50 text-gold-600 hover:bg-gold-100',
-    earth: 'bg-earth-50 text-earth-600 hover:bg-earth-100',
+    forest:     'bg-forest-50 text-forest-600 hover:bg-forest-100',
+    gold:       'bg-gold-50 text-gold-600 hover:bg-gold-100',
+    earth:      'bg-earth-50 text-earth-600 hover:bg-earth-100',
   }
 
   return (
-    <button className={`glass rounded-2xl p-6 flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 ${colorClasses[color]}`}>
+    <button onClick={onClick} className={`glass rounded-2xl p-6 flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 ${colorClasses[color]}`}>
       {icon}
       <span className="font-medium">{label}</span>
     </button>
@@ -383,13 +448,13 @@ function QuickAction({ icon, label, color }) {
 function ActivityItem({ message, time, type }) {
   const typeColors = {
     success: 'bg-forest-100 text-forest-600',
-    info: 'bg-gold-100 text-gold-600',
+    info:    'bg-gold-100 text-gold-600',
     warning: 'bg-sunset-100 text-sunset-600',
   }
 
   const typeIcons = {
     success: <CheckCircle className="w-4 h-4" />,
-    info: <Clock className="w-4 h-4" />,
+    info:    <Clock className="w-4 h-4" />,
     warning: <AlertCircle className="w-4 h-4" />,
   }
 
@@ -406,11 +471,12 @@ function ActivityItem({ message, time, type }) {
   )
 }
 
-function ProduceCard({ produce }) {
+function ProduceCard({ produce, onDelete, onEdit }) {
+  const { toast } = useToast()
   const statusColors = {
-    listed: 'bg-forest-100 text-forest-700',
+    listed:  'bg-forest-100 text-forest-700',
     pending: 'bg-gold-100 text-gold-700',
-    sold: 'bg-earth-100 text-earth-700',
+    sold:    'bg-earth-100 text-earth-700',
   }
 
   return (
@@ -424,7 +490,7 @@ function ProduceCard({ produce }) {
           {produce.status}
         </span>
       </div>
-      
+
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div>
           <p className="text-xs text-earth-500 mb-1">Quantity</p>
@@ -441,22 +507,37 @@ function ProduceCard({ produce }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button className="flex-1 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors">
+        <button
+          onClick={() => onEdit(produce)}
+          className="flex-1 px-4 py-2 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors"
+        >
           Edit
         </button>
-        <button className="flex-1 px-4 py-2 bg-white text-earth-900 rounded-xl font-medium hover:bg-earth-100 transition-colors border border-earth-200">
-          View Details
+        <button
+          onClick={() => { onDelete(produce.id); toast(`${produce.name} removed from listings.`, 'error') }}
+          className="flex-1 px-4 py-2 bg-white text-red-600 rounded-xl font-medium hover:bg-red-50 transition-colors border border-red-200"
+        >
+          Remove
         </button>
       </div>
     </div>
   )
 }
 
-function OrderCard({ order }) {
+function OrderCard({ order, onUpdateStatus }) {
+  const { toast } = useToast()
   const statusColors = {
-    confirmed: 'bg-forest-100 text-forest-700',
+    confirmed:  'bg-forest-100 text-forest-700',
     delivering: 'bg-gold-100 text-gold-700',
-    completed: 'bg-earth-100 text-earth-700',
+    completed:  'bg-earth-100 text-earth-700',
+  }
+  const nextStatus = {
+    confirmed: 'delivering',
+    delivering: 'completed',
+  }
+  const nextLabel = {
+    confirmed: 'Mark Dispatched',
+    delivering: 'Mark Delivered',
   }
 
   return (
@@ -470,17 +551,34 @@ function OrderCard({ order }) {
           {order.status}
         </span>
       </div>
-      
+
       <p className="text-sm text-earth-600 mb-2">{order.items}</p>
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between mb-4">
         <p className="text-xs text-earth-500">{order.date}</p>
         <p className="text-xl font-bold text-earth-900">{order.amount}</p>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => toast(`Opening chat with ${order.buyer}...`, 'info')}
+          className="flex-1 px-3 py-2 bg-white border border-earth-200 text-earth-700 rounded-xl text-sm font-medium hover:bg-earth-50 transition-colors"
+        >
+          Contact Buyer
+        </button>
+        {order.status !== 'completed' && (
+          <button
+            onClick={() => onUpdateStatus(order.id, nextStatus[order.status])}
+            className="flex-1 px-3 py-2 bg-forest-600 text-white rounded-xl text-sm font-medium hover:bg-forest-700 transition-colors"
+          >
+            {nextLabel[order.status]}
+          </button>
+        )}
       </div>
     </div>
   )
 }
 
-function TransportCard({ request }) {
+function TransportCard({ request, onCancel }) {
+  const { toast } = useToast()
   const statusColors = {
     matched: 'bg-forest-100 text-forest-700',
     pending: 'bg-gold-100 text-gold-700',
@@ -500,16 +598,32 @@ function TransportCard({ request }) {
           {request.status}
         </span>
       </div>
-      
+
       {request.driver ? (
-        <div className="flex items-center gap-2 text-earth-600">
-          <CheckCircle className="w-4 h-4 text-forest-600" />
-          <span className="text-sm">Driver: {request.driver}</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-earth-600">
+            <CheckCircle className="w-4 h-4 text-forest-600" />
+            <span className="text-sm">Driver: {request.driver}</span>
+          </div>
+          <button
+            onClick={() => toast(`Calling ${request.driver}...`, 'info')}
+            className="px-3 py-1.5 bg-forest-100 text-forest-700 rounded-lg text-xs font-medium hover:bg-forest-200 transition-colors"
+          >
+            Call Driver
+          </button>
         </div>
       ) : (
-        <div className="flex items-center gap-2 text-earth-600">
-          <Clock className="w-4 h-4 text-gold-600" />
-          <span className="text-sm">Waiting for driver...</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-earth-600">
+            <Clock className="w-4 h-4 text-gold-600" />
+            <span className="text-sm">Searching for driver...</span>
+          </div>
+          <button
+            onClick={() => onCancel(request.id)}
+            className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors"
+          >
+            Cancel
+          </button>
         </div>
       )}
     </div>
@@ -532,9 +646,9 @@ function PriceTrend({ product, current, trend, status }) {
 
 function HealthCard({ health }) {
   const riskColors = {
-    low: 'bg-forest-100 text-forest-700',
+    low:    'bg-forest-100 text-forest-700',
     medium: 'bg-gold-100 text-gold-700',
-    high: 'bg-sunset-100 text-sunset-700',
+    high:   'bg-sunset-100 text-sunset-700',
   }
 
   return (
@@ -545,7 +659,7 @@ function HealthCard({ health }) {
           {health.spoilageRisk} risk
         </span>
       </div>
-      
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Thermometer className="w-4 h-4 text-terracotta-600" />
@@ -586,3 +700,301 @@ function NavItem({ icon, label, active, onClick, color = '#c1440e' }) {
     </button>
   )
 }
+
+// ── Add/Edit Produce Modal ────────────────────────────────────────────────────────
+function AddProduceModal({ mode, produce, onClose, onSave }) {
+  const [name, setName]           = useState('')
+  const [quantity, setQuantity]   = useState('')
+  const [unit, setUnit]           = useState('kg')
+  const [price, setPrice]         = useState('')
+  const [location, setLocation]   = useState('Ho')
+  const [freshness, setFreshness] = useState(90)
+  const [busy, setBusy]           = useState(false)
+
+  useEffect(() => {
+    if (mode === 'edit' && produce) {
+      setName(produce.name)
+      const qtyNum = parseInt(produce.quantity) || ''
+      const qtyUnit = produce.quantity.split(' ')[1] || 'kg'
+      setQuantity(qtyNum)
+      setUnit(qtyUnit)
+      const priceNum = produce.price.replace(/[^\d.]/g, '') || ''
+      setPrice(priceNum)
+      setLocation(produce.location || 'Ho')
+      setFreshness(produce.freshness || 90)
+    }
+  }, [mode, produce])
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    setBusy(true)
+    setTimeout(() => {
+      onSave({
+        name,
+        quantity: `${quantity} ${unit}`,
+        price: `₵${price}/${unit}`,
+        freshness: Number(freshness),
+        location,
+      })
+      setBusy(false)
+    }, 600)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-earth-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-earth-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #2d6a4f, #52b788)' }}>
+          <h3 className="font-bold text-white text-lg flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            <span>{mode === 'edit' ? 'Edit Produce Item' : 'Add New Produce'}</span>
+          </h3>
+          <button onClick={onClose} className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors">
+            <X className="w-5 h-5 text-white" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Produce Name */}
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Produce Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Cassava, Tomatoes, Maize"
+              className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900"
+              required
+            />
+          </div>
+
+          {/* Quantity + Unit */}
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Quantity</label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={quantity}
+                onChange={e => setQuantity(e.target.value)}
+                placeholder="e.g. 500"
+                min="1"
+                className="flex-1 px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900"
+                required
+              />
+              <select
+                value={unit}
+                onChange={e => setUnit(e.target.value)}
+                className="px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900 bg-white"
+              >
+                <option value="kg">kg</option>
+                <option value="bags">bags</option>
+                <option value="crates">crates</option>
+                <option value="tonnes">tonnes</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Price */}
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Price per unit (₵)</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-earth-500 font-semibold">₵</span>
+              <input
+                type="number"
+                value={price}
+                onChange={e => setPrice(e.target.value)}
+                placeholder="e.g. 2.50"
+                step="0.01"
+                min="0"
+                className="w-full pl-9 pr-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Farm Location</label>
+            <select
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900 bg-white"
+            >
+              <option value="Ho">Ho</option>
+              <option value="Anloga">Anloga</option>
+              <option value="Keta">Keta</option>
+              <option value="Sogakope">Sogakope</option>
+            </select>
+          </div>
+
+          {/* Freshness */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-semibold text-earth-700">Freshness</label>
+              <span className="text-sm font-bold text-forest-600">{freshness}%</span>
+            </div>
+            <input
+              type="range"
+              min="50"
+              max="100"
+              value={freshness}
+              onChange={e => setFreshness(e.target.value)}
+              className="w-full accent-forest-600"
+            />
+            <div className="flex justify-between text-xs text-earth-400 mt-1">
+              <span>50% — Aging</span>
+              <span>100% — Just Harvested</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 border border-earth-200 rounded-xl text-earth-700 font-semibold hover:bg-earth-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy}
+              className="flex-1 py-3 bg-gradient-to-r from-forest-600 to-forest-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{mode === 'edit' ? 'Save Changes' : 'List Produce'}</>}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Transport Request Modal ──────────────────────────────────────────────────
+function TransportRequestModal({ startLoc, endLoc, produceList, onClose, onSubmit }) {
+  const [from, setFrom] = useState(startLoc.toUpperCase())
+  const [to, setTo] = useState(endLoc.toUpperCase())
+  const [selectedProduceId, setSelectedProduceId] = useState(produceList[0]?.id || '')
+  const [quantity, setQuantity] = useState('200 kg')
+  const [busy, setBusy] = useState(false)
+
+  const selectedProduce = produceList.find(p => p.id === Number(selectedProduceId))
+  const produceName = selectedProduce ? selectedProduce.name : 'Cassava'
+
+  useEffect(() => {
+    if (selectedProduce) {
+      setQuantity(selectedProduce.quantity)
+    }
+  }, [selectedProduceId])
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    setBusy(true)
+    setTimeout(() => {
+      onSubmit({
+        from,
+        to,
+        produceName,
+        quantity
+      })
+      setBusy(false)
+    }, 600)
+  }
+
+  return (
+    <div className="fixed inset-0 bg-earth-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-scale-in">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-earth-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #2d6a4f, #52b788)' }}>
+          <h3 className="font-bold text-white text-lg flex items-center gap-2">
+            <Truck className="w-5 h-5" />
+            <span>New Transport Request</span>
+          </h3>
+          <button onClick={onClose} className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors">
+            <X className="w-5 h-5 text-white" />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-earth-800">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-earth-700 mb-1">Pickup Hub</label>
+              <select
+                value={from}
+                onChange={e => setFrom(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 bg-white"
+              >
+                <option value="HO">Ho</option>
+                <option value="KETA">Keta</option>
+                <option value="ANLOGA">Anloga</option>
+                <option value="SOGAKOPE">Sogakope</option>
+                <option value="ACCRA">Accra</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-earth-700 mb-1">Delivery Hub</label>
+              <select
+                value={to}
+                onChange={e => setTo(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 bg-white"
+              >
+                <option value="HO">Ho</option>
+                <option value="KETA">Keta</option>
+                <option value="ANLOGA">Anloga</option>
+                <option value="SOGAKOPE">Sogakope</option>
+                <option value="ACCRA">Accra</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Select Produce to Ship</label>
+            <select
+              value={selectedProduceId}
+              onChange={e => setSelectedProduceId(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 bg-white"
+              required
+            >
+              <option value="" disabled>-- Select Produce --</option>
+              {produceList.map(p => (
+                <option key={p.id} value={p.id}>{p.name} ({p.quantity} available)</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Shipment Quantity</label>
+            <input
+              type="text"
+              value={quantity}
+              onChange={e => setQuantity(e.target.value)}
+              placeholder="e.g. 200 kg"
+              className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900"
+              required
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 border border-earth-200 rounded-xl text-earth-700 font-semibold hover:bg-earth-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy}
+              className="flex-1 py-3 bg-gradient-to-r from-forest-600 to-forest-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200 disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Truck className="w-4 h-4" /> Request</>}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
