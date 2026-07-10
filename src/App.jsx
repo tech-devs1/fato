@@ -12,7 +12,7 @@ const BuyerDashboard = lazy(() => import('./components/dashboards/BuyerDashboard
 const TransportDashboard = lazy(() => import('./components/dashboards/TransportDashboard'))
 const AdminDashboard = lazy(() => import('./components/dashboards/AdminDashboard'))
 
-// Role → default view mapping
+// Role to default view mapping
 const ROLE_HOME = {
   farmer:    'farmer',
   buyer:     'buyer',
@@ -31,9 +31,11 @@ function isInstalledPWA() {
 
 // ── Inner app — has access to auth context ─────────────────────────────────────
 function AppInner() {
-  const { currentUser, userProfile } = useAuth()
-  const [loading,     setLoading]     = useState(true)
-  // Landing page is never shown in installed PWA mode
+  // authLoading = true until Firebase onAuthStateChanged fires for the first time
+  const { currentUser, userProfile, loading: authLoading } = useAuth()
+
+  // splashDone = true once the LoadingScreen animation completes its callback
+  const [splashDone,  setSplashDone]  = useState(false)
   const [showLanding, setShowLanding] = useState(false)
   const [showAuth,    setShowAuth]    = useState(() => {
     const saved = localStorage.getItem('nunya_show_auth')
@@ -44,9 +46,8 @@ function AppInner() {
     return saved || null
   })
 
-  // Persist state to localStorage (showLanding is intentionally NOT persisted
-  // — it is always derived fresh from PWA detection + auth state each session)
-
+  // Persist to localStorage (showLanding intentionally NOT persisted —
+  // it is always derived fresh from PWA detection + auth state each session)
   useEffect(() => {
     localStorage.setItem('nunya_show_auth', JSON.stringify(showAuth))
   }, [showAuth])
@@ -66,9 +67,17 @@ function AppInner() {
     }
   }, [currentUser, userProfile])
 
-  const handleLoadingComplete = () => {
-    setLoading(false)
-    if (!currentUser) {
+  // KEY FIX: Wait for BOTH splash animation AND Firebase auth to resolve
+  // before making any routing decision. This eliminates the white screen
+  // that occurred when the splash finished before Firebase was ready.
+  useEffect(() => {
+    if (!splashDone || authLoading) return
+
+    if (currentUser) {
+      // Already logged in — go straight to dashboard
+      setShowLanding(false)
+      setShowAuth(false)
+    } else {
       if (isInstalledPWA()) {
         // Installed PWA — skip landing page, go straight to sign-in
         setShowLanding(false)
@@ -78,12 +87,10 @@ function AppInner() {
         setShowLanding(true)
         setShowAuth(false)
       }
-    } else {
-      // Already authenticated — go straight to dashboard
-      setShowLanding(false)
-      setShowAuth(false)
     }
-  }
+  }, [splashDone, authLoading, currentUser])
+
+  const handleLoadingComplete = () => setSplashDone(true)
 
   const handleContinue = () => {
     setShowLanding(false)
@@ -92,31 +99,28 @@ function AppInner() {
 
   const handleAuthenticated = () => {
     setShowAuth(false)
-    // currentView will be set by useEffect once userProfile loads
+    // currentView will be set by the userProfile useEffect once profile loads
   }
 
-  const handleNavigate = (view) => {
-    setCurrentView(view)
-  }
+  const handleNavigate = (view) => setCurrentView(view)
 
   const handleLogout = () => {
     setCurrentView(null)
-    // Clear persisted state on logout
     localStorage.removeItem('nunya_show_auth')
     localStorage.removeItem('nunya_current_view')
     if (isInstalledPWA()) {
-      // PWA — go straight to sign-in after logout
       setShowLanding(false)
       setShowAuth(true)
     } else {
-      // Browser — go back to landing page after logout
       setShowLanding(true)
       setShowAuth(false)
     }
   }
 
-  // ── 0. Loading Screen ────────────────────────────────────────────────────────
-  if (loading) {
+  // ── 0. Splash Screen ─────────────────────────────────────────────────────────
+  // Show splash until BOTH animation is complete AND Firebase auth is ready.
+  // This prevents any white-screen gap between splash and the next screen.
+  if (!splashDone || authLoading) {
     return <LoadingScreen onComplete={handleLoadingComplete} />
   }
 

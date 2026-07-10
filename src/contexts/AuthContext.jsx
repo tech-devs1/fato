@@ -303,7 +303,17 @@ export function AuthProvider({ children }) {
         setLoading(false)
       }
     })
-    return unsub
+
+    // Safety timeout: if Firebase never calls onAuthStateChanged (offline/network error),
+    // force loading=false after 8s so the app doesn't get stuck on the splash screen.
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false)
+    }, 8000)
+
+    return () => {
+      unsub()
+      clearTimeout(safetyTimeout)
+    }
   }, [])
 
   async function resetPassword(email) {
@@ -330,5 +340,5 @@ export function AuthProvider({ children }) {
     refreshProfile: () => currentUser && userProfile && loadFullProfile(currentUser.uid, userProfile.role)
   }
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
