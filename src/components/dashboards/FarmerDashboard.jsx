@@ -9,6 +9,7 @@ import ReputationCard from '../reputation/ReputationCard'
 import MapboxView from '../MapboxView'
 import SettingsDropdown from './SettingsDropdown'
 import { useToast } from '../ui/Toast'
+import ChatModal from '../chat/ChatModal'
 
 export default function FarmerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview')
@@ -24,6 +25,10 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
   
   // Transport request state
   const [showTransportModal, setShowTransportModal] = useState(false)
+  
+  // Chat modal state
+  const [chatRecipient, setChatRecipient] = useState(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const mockProfile = {
     user: { displayName: 'Emmanuel A.' },
     verification: {
@@ -248,6 +253,9 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
                 <OrderCard key={order.id} order={order} onUpdateStatus={(id, newStatus) => {
                   setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o))
                   toast(`Order #${id} marked as ${newStatus}!`, 'success')
+                }} onContact={(recipient) => {
+                  setChatRecipient(recipient)
+                  setIsChatOpen(true)
                 }} />
               ))}
             </div>
@@ -345,6 +353,10 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
                     setTransportRequests(prev => prev.filter(r => r.id !== id))
                     toast('Transport request cancelled.', 'error')
                   }}
+                  onContact={(recipient) => {
+                    setChatRecipient(recipient)
+                    setIsChatOpen(true)
+                  }}
                 />
               ))}
             </div>
@@ -428,6 +440,18 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
             ])
             setShowTransportModal(false)
             toast('Transport request submitted successfully! Matching with drivers...', 'success')
+          }}
+        />
+      )}
+      
+      {/* In-App Chat Modal */}
+      {isChatOpen && chatRecipient && (
+        <ChatModal
+          isOpen={isChatOpen}
+          recipient={chatRecipient}
+          onClose={() => {
+            setIsChatOpen(false)
+            setChatRecipient(null)
           }}
         />
       )}    </div>
@@ -551,7 +575,7 @@ function ProduceCard({ produce, onDelete, onEdit }) {
   )
 }
 
-function OrderCard({ order, onUpdateStatus }) {
+function OrderCard({ order, onUpdateStatus, onContact }) {
   const { toast } = useToast()
   const statusColors = {
     confirmed:  'bg-forest-100 text-forest-700',
@@ -586,7 +610,7 @@ function OrderCard({ order, onUpdateStatus }) {
       </div>
       <div className="flex gap-2">
         <button
-          onClick={() => toast(`Opening chat with ${order.buyer}...`, 'info')}
+          onClick={() => onContact({ name: order.buyer, role: 'buyer', phone: '+233245678901' })}
           className="flex-1 px-3 py-2 bg-white border border-earth-200 text-earth-700 rounded-xl text-sm font-medium hover:bg-earth-50 transition-colors"
         >
           Contact Buyer
@@ -604,7 +628,7 @@ function OrderCard({ order, onUpdateStatus }) {
   )
 }
 
-function TransportCard({ request, onCancel }) {
+function TransportCard({ request, onCancel, onContact }) {
   const { toast } = useToast()
   const statusColors = {
     matched: 'bg-forest-100 text-forest-700',
@@ -633,10 +657,10 @@ function TransportCard({ request, onCancel }) {
             <span className="text-sm">Driver: {request.driver}</span>
           </div>
           <button
-            onClick={() => toast(`Calling ${request.driver}...`, 'info')}
+            onClick={() => onContact({ name: request.driver, role: 'transport', phone: '+233242233445' })}
             className="px-3 py-1.5 bg-forest-100 text-forest-700 rounded-lg text-xs font-medium hover:bg-forest-200 transition-colors"
           >
-            Call Driver
+            Contact Driver
           </button>
         </div>
       ) : (

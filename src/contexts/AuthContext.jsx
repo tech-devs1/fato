@@ -125,11 +125,11 @@ export function AuthProvider({ children }) {
 
   // ── Email / Password ───────────────────────────────────────────────────────
 
-  async function signUp(email, password, displayName, role = 'farmer') {
+  async function signUp(email, password, displayName, role = 'farmer', phone = '') {
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(cred.user, { displayName })
     localStorage.setItem(`agro_role_${cred.user.uid}`, role)
-    await createUserDoc(cred.user, { displayName, role })
+    await createUserDoc(cred.user, { displayName, role, phone })
     return cred
   }
 

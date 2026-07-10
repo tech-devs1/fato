@@ -5,6 +5,7 @@ import ReputationCard from '../reputation/ReputationCard'
 import MapboxView from '../MapboxView'
 import SettingsDropdown from './SettingsDropdown'
 import { useToast } from '../ui/Toast'
+import ChatModal from '../chat/ChatModal'
 
 export default function TransportDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('jobs')
@@ -15,6 +16,10 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
   const [endLoc, setEndLoc] = useState('keta')
   const [activeNavigationJob, setActiveNavigationJob] = useState(null)
   const [customRouteInfo, setCustomRouteInfo] = useState(null)
+  
+  // Chat modal state
+  const [chatRecipient, setChatRecipient] = useState(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   const mockProfile = {
     user: { displayName: 'Kofi Mensah' },
@@ -200,9 +205,18 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
             </div>
 
             {/* Available Jobs */}
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {jobs.map((job) => (
-                <JobCard key={job.id} job={job} onNavigateRoute={(j) => setActiveNavigationJob(j)} onAccept={() => handleAcceptJob(job)} />
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onNavigateRoute={setActiveNavigationJob}
+                  onAccept={() => handleAcceptJob(job.id)}
+                  onContact={(recipient) => {
+                    setChatRecipient(recipient)
+                    setIsChatOpen(true)
+                  }}
+                />
               ))}
             </div>
           </div>
@@ -212,9 +226,17 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Current Deliveries</h2>
             
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {deliveries.map((delivery) => (
-                <DeliveryCard key={delivery.id} delivery={delivery} setDeliveries={setDeliveries} />
+                <DeliveryCard
+                  key={delivery.id}
+                  delivery={delivery}
+                  setDeliveries={setDeliveries}
+                  onContact={(recipient) => {
+                    setChatRecipient(recipient)
+                    setIsChatOpen(true)
+                  }}
+                />
               ))}
             </div>
           </div>
@@ -367,6 +389,18 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
           </div>
         </div>
       )}
+
+      {/* In-App Chat Modal */}
+      {isChatOpen && chatRecipient && (
+        <ChatModal
+          isOpen={isChatOpen}
+          recipient={chatRecipient}
+          onClose={() => {
+            setIsChatOpen(false)
+            setChatRecipient(null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -390,7 +424,7 @@ function StatCard({ label, value, icon, color }) {
   )
 }
 
-function JobCard({ job, onNavigateRoute, onAccept }) {
+function JobCard({ job, onNavigateRoute, onAccept, onContact }) {
   const urgencyColors = {
     high: 'bg-sunset-100 text-sunset-700',
     medium: 'bg-gold-100 text-gold-700',
@@ -414,9 +448,17 @@ function JobCard({ job, onNavigateRoute, onAccept }) {
             <p className="text-sm text-earth-500">{job.farmer}</p>
           </div>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${urgencyColors[job.urgency]}`}>
-          {job.urgency}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-medium ${urgencyColors[job.urgency]}`}>
+            {job.urgency}
+          </span>
+          <button
+            onClick={() => onContact({ name: job.farmer, role: 'farmer', phone: '+233240123456' })}
+            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg text-[10px] transition-colors"
+          >
+            Chat Farmer
+          </button>
+        </div>
       </div>
       
       <div className="grid grid-cols-3 gap-4 mb-4">
@@ -454,7 +496,7 @@ function JobCard({ job, onNavigateRoute, onAccept }) {
   )
 }
 
-function DeliveryCard({ delivery, setDeliveries }) {
+function DeliveryCard({ delivery, setDeliveries, onContact }) {
   const { toast } = useToast()
   const statusColors = {
     loading: 'bg-gold-100 text-gold-700',
@@ -524,19 +566,27 @@ function DeliveryCard({ delivery, setDeliveries }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-earth-600">
+      <div className="flex items-center justify-between text-sm text-earth-600 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4" />
           <span>ETA: {delivery.eta}</span>
         </div>
-        {delivery.status !== 'delivered' && (
-          <button 
-            onClick={handleUpdateProgress}
-            className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-xl transition-colors text-xs"
+        <div className="flex gap-2">
+          <button
+            onClick={() => onContact({ name: 'Client/Farmer (Emmanuel A.)', role: 'farmer', phone: '+233240123456' })}
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors text-xs"
           >
-            Update Progress
+            Chat
           </button>
-        )}
+          {delivery.status !== 'delivered' && (
+            <button 
+              onClick={handleUpdateProgress}
+              className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-xl transition-colors text-xs"
+            >
+              Update Progress
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

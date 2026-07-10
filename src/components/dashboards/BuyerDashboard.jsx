@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import {
   ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter,
   MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle,
@@ -10,6 +10,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import MapboxView, { VOLTA_COORDINATES } from '../MapboxView'
 import SettingsDropdown from './SettingsDropdown'
 import { useToast } from '../ui/Toast'
+import ChatModal from '../chat/ChatModal'
 
 export default function BuyerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('marketplace')
@@ -18,6 +19,10 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
   const [selectedDelivery, setSelectedDelivery] = useState(null)
   const [activeFilter, setActiveFilter] = useState('All')
   const [orderItem, setOrderItem] = useState(null)
+  
+  // Chat modal state
+  const [chatRecipient, setChatRecipient] = useState(null)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   const displayName = userProfile?.displayName || 'Buyer'
 
@@ -177,6 +182,10 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
                         toast('Order cancelled successfully.', 'error')
                       }}
                       onTrack={() => setActiveTab('delivery')}
+                      onContact={(recipient) => {
+                        setChatRecipient(recipient)
+                        setIsChatOpen(true)
+                      }}
                     />
                   ))}
               </div>
@@ -190,7 +199,14 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
 
             <div className="grid gap-4">
               {savedSuppliers.map((supplier) => (
-                <SupplierCard key={supplier.id} supplier={supplier} />
+                <SupplierCard
+                  key={supplier.id}
+                  supplier={supplier}
+                  onContact={(recipient) => {
+                    setChatRecipient(recipient)
+                    setIsChatOpen(true)
+                  }}
+                />
               ))}
             </div>
           </div>
@@ -212,12 +228,25 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
                       Route: {selectedDelivery.from} to {selectedDelivery.to} • Driver: {selectedDelivery.driver}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setSelectedDelivery(null)}
-                    className="px-4 py-2 bg-earth-100 hover:bg-earth-200 text-earth-800 rounded-xl font-semibold text-xs transition-colors"
-                  >
-                    Clear Map
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {selectedDelivery.driver !== 'Pending' && (
+                      <button
+                        onClick={() => {
+                          setChatRecipient({ name: selectedDelivery.driver, role: 'transport', phone: '+233243344556' })
+                          setIsChatOpen(true)
+                        }}
+                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-xs transition-colors"
+                      >
+                        Chat with Driver
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setSelectedDelivery(null)}
+                      className="px-3 py-2 bg-earth-100 hover:bg-earth-200 text-earth-800 rounded-xl font-semibold text-xs transition-colors"
+                    >
+                      Clear Map
+                    </button>
+                  </div>
                 </div>
 
                 <div className="h-[320px] min-h-[320px] rounded-2xl overflow-hidden border border-earth-200 shadow-inner">
@@ -325,6 +354,18 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
           }}
         />
       )}
+
+      {/* In-App Chat Modal */}
+      {isChatOpen && chatRecipient && (
+        <ChatModal
+          isOpen={isChatOpen}
+          recipient={chatRecipient}
+          onClose={() => {
+            setIsChatOpen(false)
+            setChatRecipient(null)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -397,7 +438,7 @@ function MarketplaceCard({ item, onOrder }) {
   )
 }
 
-function BuyerOrderCard({ order, onCancel, onTrack }) {
+function BuyerOrderCard({ order, onCancel, onTrack, onContact }) {
   const statusColors = {
     processing: 'bg-gold-100 text-gold-700',
     shipped:    'bg-terracotta-100 text-terracotta-700',
@@ -434,13 +475,19 @@ function BuyerOrderCard({ order, onCancel, onTrack }) {
       </div>
 
       <div className="flex gap-2">
+        <button
+          onClick={() => onContact({ name: 'Seller (Emmanuel A.)', role: 'farmer', phone: '+233240123456' })}
+          className="flex-1 px-3 py-2 bg-white border border-earth-200 text-earth-700 rounded-xl text-sm font-medium hover:bg-earth-50 transition-colors"
+        >
+          Contact Seller
+        </button>
         {order.status === 'shipped' && (
           <button
             onClick={onTrack}
             className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1"
           >
             <Navigation className="w-4 h-4" />
-            Track Delivery
+            Track
           </button>
         )}
         {order.status === 'processing' && (
@@ -448,15 +495,7 @@ function BuyerOrderCard({ order, onCancel, onTrack }) {
             onClick={() => onCancel(order.id)}
             className="flex-1 px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors border border-red-200"
           >
-            Cancel Order
-          </button>
-        )}
-        {order.status === 'delivered' && (
-          <button
-            className="flex-1 px-3 py-2 bg-forest-50 text-forest-700 rounded-xl text-sm font-medium hover:bg-forest-100 transition-colors border border-forest-200"
-            onClick={() => {}}
-          >
-            ✓ Delivered
+            Cancel
           </button>
         )}
       </div>
@@ -464,7 +503,7 @@ function BuyerOrderCard({ order, onCancel, onTrack }) {
   )
 }
 
-function SupplierCard({ supplier }) {
+function SupplierCard({ supplier, onContact }) {
   const { toast } = useToast()
   return (
     <div className="glass rounded-2xl p-6 hover:scale-[1.02] transition-transform duration-300">
@@ -493,13 +532,21 @@ function SupplierCard({ supplier }) {
         </div>
       </div>
 
-      <button
-        onClick={() => toast(`Viewing ${supplier.name}'s product catalogue...`, 'info')}
-        className="flex-1 w-full px-4 py-2 bg-white text-earth-900 rounded-xl font-medium hover:bg-earth-100 transition-colors border border-earth-200 flex items-center justify-center gap-2"
-      >
-        <span>View Products</span>
-        <ChevronRight className="w-4 h-4" />
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={() => toast(`Viewing ${supplier.name}'s product catalogue...`, 'info')}
+          className="flex-1 px-4 py-2 bg-white text-earth-900 rounded-xl font-medium hover:bg-earth-100 transition-colors border border-earth-200 flex items-center justify-center gap-2"
+        >
+          <span>View Products</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onContact({ name: supplier.name, role: 'farmer', phone: '+233240123456' })}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors"
+        >
+          Chat
+        </button>
+      </div>
     </div>
   )
 }

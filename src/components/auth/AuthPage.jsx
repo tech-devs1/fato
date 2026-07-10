@@ -291,6 +291,7 @@ function RegisterRoleForm({ onSelect, onSwitch }) {
 function SignupForm({ role, onSwitch, onDone }) {
   const { signUp, signInWithGoogle } = useAuth()
   const [name, setName]           = useState('')
+  const [phone, setPhone]         = useState('+233')
   const [email, setEmail]         = useState('')
   const [password, setPassword]   = useState('')
   const [confirm, setConfirm]     = useState('')
@@ -300,12 +301,16 @@ function SignupForm({ role, onSwitch, onDone }) {
 
   async function handleSignUp(e) {
     e.preventDefault()
+    if (!phone || phone.trim() === '+233' || phone.length < 10) {
+      setError('Please enter a valid phone number (e.g. +233241234567).')
+      return
+    }
     if (password !== confirm) { setError('Passwords do not match'); return }
     if (password.length < 6)  { setError('Password must be at least 6 characters'); return }
     setBusy(true)
     setError('')
     try {
-      await signUp(email, password, name, role)
+      await signUp(email, password, name, role, phone)
       onDone()
     } catch (err) {
       setError(friendlyError(err))
@@ -351,6 +356,14 @@ function SignupForm({ role, onSwitch, onDone }) {
           placeholder="Full name"
           value={name}
           onChange={e => setName(e.target.value)}
+          required
+        />
+        <Input
+          icon={<Phone className="w-4 h-4" />}
+          type="tel"
+          placeholder="Phone Number (e.g. +233241234567)"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
           required
         />
         <Input
