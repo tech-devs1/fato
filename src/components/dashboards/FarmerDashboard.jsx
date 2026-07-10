@@ -10,6 +10,7 @@ import MapboxView from '../MapboxView'
 import SettingsDropdown from './SettingsDropdown'
 import { useToast } from '../ui/Toast'
 import ChatModal from '../chat/ChatModal'
+import FarmerInsightsPanel from './FarmerInsightsPanel'
 
 export default function FarmerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview')
@@ -339,27 +340,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
         )}
 
         {activeTab === 'insights' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-earth-900">Market Insights</h2>
-
-            <div className="glass rounded-2xl p-6">
-              <h3 className="text-lg font-semibold text-earth-900 mb-4">Price Trends</h3>
-              <div className="space-y-4">
-                <PriceTrend product="Cassava" current="₵2.50/kg" trend="+12%" status="up" />
-                <PriceTrend product="Tomatoes" current="₵4.20/kg" trend="+8%"  status="up" />
-                <PriceTrend product="Maize"    current="₵3.10/kg" trend="-3%"  status="down" />
-              </div>
-            </div>
-
-            <div className="glass rounded-2xl p-6">
-              <h3 className="text-lg font-semibold text-earth-900 mb-4">Demand Forecast</h3>
-              <p className="text-earth-600 mb-4">AI predicts high demand for cassava in Keta over the next 7 days.</p>
-              <div className="flex items-center gap-2 text-forest-600">
-                <TrendingUp className="w-5 h-5" />
-                <span className="font-medium">45% above average</span>
-              </div>
-            </div>
-          </div>
+          <FarmerInsightsPanel userProfile={userProfile} />
         )}
 
         {activeTab === 'health' && (

@@ -228,8 +228,9 @@ export default function MapboxView({
         <span>${m.label || 'Hub'}</span>
       `
 
+      const htmlContent = m.popupHtml || `<div class="p-2 font-sans text-xs text-earth-900"><strong>${m.label}</strong><br/>Active Produce: ${m.produce || 0}kg<br/>Active Demand: ${m.demand || 0}kg</div>`
       const popup = new mapboxgl.Popup({ offset: 15 })
-        .setHTML(`<div class="p-2 font-sans text-xs text-earth-900"><strong>${m.label}</strong><br/>Active Produce: ${m.produce || 0}kg<br/>Active Demand: ${m.demand || 0}kg</div>`)
+        .setHTML(htmlContent)
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat(mCoords)
