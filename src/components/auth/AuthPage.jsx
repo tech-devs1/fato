@@ -304,11 +304,16 @@ function SignupForm({ role, onSwitch, onDone }) {
   const [licenseId, setLicenseId]           = useState('')
   const [ghanaCardFile, setGhanaCardFile]   = useState(null)
   const [licenseFile, setLicenseFile]       = useState(null)
+  const [community, setCommunity]           = useState('')
 
   async function handleSignUp(e) {
     e.preventDefault()
     if (!phone || phone.trim() === '+233' || phone.length < 10) {
       setError('Please enter a valid phone number (e.g. +233241234567).')
+      return
+    }
+    if (!community.trim()) {
+      setError('Please enter your community / location.')
       return
     }
     if (password !== confirm) { setError('Passwords do not match'); return }
@@ -325,12 +330,15 @@ function SignupForm({ role, onSwitch, onDone }) {
     setBusy(true)
     setError('')
     try {
-      const extra = role === 'transport' ? {
-        ghana_card_id: ghanaCardId,
-        license_id: licenseId,
-        ghana_card_file: ghanaCardFile?.name || null,
-        license_file: licenseFile?.name || null,
-      } : {}
+      const extra = {
+        community: community,
+        ...(role === 'transport' ? {
+          ghana_card_id: ghanaCardId,
+          license_id: licenseId,
+          ghana_card_file: ghanaCardFile?.name || null,
+          license_file: licenseFile?.name || null,
+        } : {})
+      }
       await signUp(email, password, name, role, phone, extra)
       onDone()
     } catch (err) {
@@ -406,6 +414,13 @@ function SignupForm({ role, onSwitch, onDone }) {
               ? <EyeOff className="w-4 h-4" onClick={() => setShowPw(false)} />
               : <Eye className="w-4 h-4" onClick={() => setShowPw(true)} />
           }
+          required
+        />
+        <Input
+          icon={<MapPin className="w-4 h-4" />}
+          placeholder="Community / Location (e.g., Ho, Anloga)"
+          value={community}
+          onChange={e => setCommunity(e.target.value)}
           required
         />
         <Input

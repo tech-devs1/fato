@@ -1,11 +1,85 @@
 import React, { useState, useEffect } from 'react'
-import { Users, Package, Truck, TrendingUp, BarChart3, Settings, AlertTriangle, CheckCircle, Clock, MapPin, ArrowUpRight, ArrowDownRight, Activity, Shield, FileText, Check, X, Phone, Mail, Award, Map, LogOut } from 'lucide-react'
+import { Users, Package, Truck, TrendingUp, BarChart3, Settings, AlertTriangle, CheckCircle, Clock, MapPin, ArrowUpRight, ArrowDownRight, Activity, Shield, FileText, Check, X, Phone, Mail, Award, Map, LogOut, Eye, Car, Hash, Calendar, Star } from 'lucide-react'
 import { collection, query, getDocs, getDoc, doc, onSnapshot } from 'firebase/firestore'
 import { adminUpdateVerification } from '../../lib/reputationService'
 import { db } from '../../lib/firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../ui/Toast'
 import SettingsDropdown from './SettingsDropdown'
+
+// ── Transporter Detail Modal ─────────────────────────────────────────────────
+function TransporterDetailModal({ user, profile, onClose }) {
+  if (!user) return null
+  const isTransport = user.role === 'transport'
+  const InfoRow = ({ icon, label, value }) => (
+    <div className="flex items-start gap-3 py-3 border-b border-earth-100 last:border-0">
+      <div className="text-terracotta-500 mt-0.5 flex-shrink-0">{icon}</div>
+      <div>
+        <p className="text-xs text-earth-400 font-medium">{label}</p>
+        <p className="text-sm text-earth-800 font-semibold mt-0.5">{value || 'Not provided'}</p>
+      </div>
+    </div>
+  )
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.55)'}} onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-terracotta-600 to-earth-700 rounded-t-3xl px-6 py-5 flex justify-between items-start">
+          <div>
+            <p className="text-xs text-white/70 font-medium uppercase tracking-wider mb-1">{user.role} · Profile Review</p>
+            <h2 className="text-xl font-bold text-white">{user.displayName || user.name}</h2>
+            <p className="text-sm text-white/80 mt-0.5">{user.email}</p>
+          </div>
+          <button onClick={onClose} className="text-white/80 hover:text-white p-1 rounded-xl transition">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {/* Body */}
+        <div className="px-6 py-4">
+          {/* Contact */}
+          <p className="text-xs font-bold text-earth-400 uppercase tracking-wider mb-2">Contact Information</p>
+          <InfoRow icon={<Mail className="w-4 h-4" />} label="Email" value={user.email} />
+          <InfoRow icon={<Phone className="w-4 h-4" />} label="Phone" value={user.phone} />
+          <InfoRow icon={<Calendar className="w-4 h-4" />} label="Joined" value={user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'} />
+
+          {/* Role-specific details */}
+          {isTransport && (
+            <>
+              <p className="text-xs font-bold text-earth-400 uppercase tracking-wider mt-5 mb-2">Vehicle & Transport Details</p>
+              <InfoRow icon={<Car className="w-4 h-4" />} label="Vehicle Type" value={profile?.vehicle_type} />
+              <InfoRow icon={<Package className="w-4 h-4" />} label="Vehicle Capacity" value={profile?.vehicle_capacity} />
+              <InfoRow icon={<Hash className="w-4 h-4" />} label="License Number" value={profile?.license_number} />
+              <InfoRow icon={<MapPin className="w-4 h-4" />} label="Operating Region" value={profile?.region || profile?.community} />
+            </>
+          )}
+          {user.role === 'farmer' && (
+            <>
+              <p className="text-xs font-bold text-earth-400 uppercase tracking-wider mt-5 mb-2">Farm Details</p>
+              <InfoRow icon={<MapPin className="w-4 h-4" />} label="Farm Name" value={profile?.farm_name} />
+              <InfoRow icon={<MapPin className="w-4 h-4" />} label="Community" value={profile?.community} />
+              <InfoRow icon={<Award className="w-4 h-4" />} label="Farm Size" value={profile?.farm_size} />
+              <InfoRow icon={<Star className="w-4 h-4" />} label="Years Experience" value={profile?.years_experience} />
+            </>
+          )}
+          {user.role === 'buyer' && (
+            <>
+              <p className="text-xs font-bold text-earth-400 uppercase tracking-wider mt-5 mb-2">Business Details</p>
+              <InfoRow icon={<Award className="w-4 h-4" />} label="Business Name" value={profile?.business_name} />
+              <InfoRow icon={<MapPin className="w-4 h-4" />} label="Location" value={profile?.location} />
+              <InfoRow icon={<Package className="w-4 h-4" />} label="Buyer Type" value={profile?.buyer_type} />
+            </>
+          )}
+
+          {/* Reputation */}
+          <p className="text-xs font-bold text-earth-400 uppercase tracking-wider mt-5 mb-2">Platform Stats</p>
+          <InfoRow icon={<Star className="w-4 h-4" />} label="Verification Status" value={profile?.verification_status} />
+          <InfoRow icon={<CheckCircle className="w-4 h-4" />} label="Completed Deliveries" value={profile?.completed_deliveries ?? profile?.completed_orders ?? profile?.completed_purchases ?? 0} />
+          <InfoRow icon={<TrendingUp className="w-4 h-4" />} label="Average Rating" value={profile?.average_rating ? `${profile.average_rating} / 5` : 'N/A'} />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function AdminDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview')
@@ -16,6 +90,7 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
   const [verifications, setVerifications] = useState({})
   const [roleProfiles, setRoleProfiles] = useState({})
   const [permissionDenied, setPermissionDenied] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
 
   const [userRoleFilter, setUserRoleFilter] = useState('all')
   const [verificationRoleFilter, setVerificationRoleFilter] = useState('all')
@@ -227,6 +302,14 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
 
   return (
     <div className="min-h-screen bg-ivory-50 pb-24">
+      {/* User Detail Modal */}
+      {selectedUser && (
+        <TransporterDetailModal
+          user={selectedUser.user}
+          profile={selectedUser.profile}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
       {/* Firestore Permission-Denied Warning Banner */}
       {permissionDenied && (
         <div className="sticky top-0 z-[60] flex items-start gap-3 bg-red-50 border-b-2 border-red-400 px-6 py-4 text-red-800">
@@ -415,21 +498,11 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
                   }
 
                   const handleApproveUser = async (user) => {
-                    // Check if this is a mock user
-                    if (user.id.startsWith('usr_')) {
-                      toast(`Cannot approve mock user ${user.name}. This is demo data.`, 'error');
-                      return;
-                    }
-                    
                     const fields = ['phone_verified','email_verified','national_id_verified','location_verified'];
-                    if (user.role === 'transport') {
-                      fields.push('vehicle_verified');
-                    }
+                    if (user.role === 'transport') fields.push('vehicle_verified');
                     try {
-                      console.log('Approving user:', user.id, user.name);
                       for (const f of fields) {
                         await adminUpdateVerification(user.id, f, true, user.role);
-                        console.log(`Updated ${f} to true for user ${user.id}`);
                       }
                       toast(`Approved ${user.name} successfully!`, 'success');
                     } catch (error) {
@@ -439,21 +512,12 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
                   };
 
                   const handleRejectUser = async (user) => {
-                    // Check if this is a mock user
-                    if (user.id.startsWith('usr_')) {
-                      toast(`Cannot reject mock user ${user.name}. This is demo data.`, 'error');
-                      return;
-                    }
                     
                     const fields = ['phone_verified','email_verified','national_id_verified','location_verified'];
-                    if (user.role === 'transport') {
-                      fields.push('vehicle_verified');
-                    }
+                    if (user.role === 'transport') fields.push('vehicle_verified');
                     try {
-                      console.log('Rejecting user:', user.id, user.name);
                       for (const f of fields) {
                         await adminUpdateVerification(user.id, f, false, user.role);
-                        console.log(`Updated ${f} to false for user ${user.id}`);
                       }
                       toast(`Rejected/Reset verification for ${user.name}`, 'info');
                     } catch (error) {
@@ -463,12 +527,6 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
                   };
 
                   const handleToggle = async (field, currentValue) => {
-                    // Check if this is a mock user
-                    if (user.id.startsWith('usr_')) {
-                      toast(`Cannot update mock user ${user.name}. This is demo data.`, 'error');
-                      return;
-                    }
-                    
                     const updatedValue = !currentValue
                     try {
                       console.log(`Toggling ${field} for user ${user.id} from ${currentValue} to ${updatedValue}`);
@@ -481,18 +539,30 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
                     }
                   }
 
+                  const profile = roleProfiles[user.id] || {}
+
                   return (
                     <div key={user.id} className="glass rounded-3xl p-6 hover:shadow-md transition duration-300">
                       <div className="flex justify-between items-start border-b border-earth-100 pb-4 mb-4">
                         <div>
                           <h3 className="text-lg font-bold text-earth-900">{user.name}</h3>
                           <p className="text-xs font-semibold text-terracotta-600 capitalize">
-                            {user.role} · {user.farm_name || user.business_name || 'Transporter Partner'}
+                            {user.role} · {profile.farm_name || profile.business_name || profile.vehicle_type || 'Transport Partner'}
                           </p>
+                          {user.email && <p className="text-xs text-earth-400 mt-0.5">{user.email}</p>}
                         </div>
-                        <span className="px-2.5 py-0.5 bg-earth-100 text-earth-800 rounded-full text-xs capitalize font-medium">
-                          ID: {user.id.substring(0, 8)}...
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className="px-2.5 py-0.5 bg-earth-100 text-earth-800 rounded-full text-xs capitalize font-medium">
+                            ID: {user.id.substring(0, 8)}...
+                          </span>
+                          <button
+                            onClick={() => setSelectedUser({ user, profile })}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-terracotta-50 hover:bg-terracotta-100 text-terracotta-700 rounded-xl text-xs font-semibold transition-all border border-terracotta-200"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            View Details
+                          </button>
+                        </div>
                       </div>
 
                       <div className="space-y-3">

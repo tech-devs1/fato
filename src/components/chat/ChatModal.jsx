@@ -188,6 +188,11 @@ export default function ChatModal({ isOpen, onClose, recipient }) {
                 <span className="text-[10px] bg-white/20 text-indigo-100 px-2 py-0.5 rounded-full font-medium uppercase tracking-wider">
                   {recipientRoleLabel}
                 </span>
+                {(recipient.community || recipient.location) && (
+                  <span className="text-[10px] bg-emerald-500/30 text-emerald-100 px-2 py-0.5 rounded-full font-medium border border-emerald-400/20">
+                    📍 {recipient.community || recipient.location}
+                  </span>
+                )}
               </h3>
               <p className="text-xs text-indigo-200 mt-0.5">
                 {offlineMode ? 'Local Offline Mode' : 'Connected'}

@@ -65,6 +65,7 @@ export function AuthProvider({ children }) {
           displayName: finalName,
           photoURL: firebaseUser.photoURL ?? null,
           role: finalRole,
+          community: extra.community ?? null,
           createdAt: serverTimestamp(),
           profileComplete: false, // Track if profile is complete
           ...extra,
