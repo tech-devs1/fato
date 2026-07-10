@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
+<<<<<<< HEAD
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './components/ui/Toast'
+=======
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
 import LandingPage from './components/LandingPage'
 import AuthPage from './components/auth/AuthPage'
 import HomeScreen from './components/HomeScreen'
@@ -9,6 +12,7 @@ import BuyerDashboard from './components/dashboards/BuyerDashboard'
 import TransportDashboard from './components/dashboards/TransportDashboard'
 import AdminDashboard from './components/dashboards/AdminDashboard'
 
+<<<<<<< HEAD
 // Role → default view mapping
 const ROLE_HOME = {
   farmer:    'farmer',
@@ -16,6 +20,11 @@ const ROLE_HOME = {
   transport: 'transport',
   admin:     'admin',
 }
+=======
+function App() {
+  const [showLanding, setShowLanding] = useState(true)
+  const [currentView, setCurrentView] = useState('home')
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
 
 // ── Inner app — has access to auth context ─────────────────────────────────────
 function AppInner() {
@@ -48,12 +57,15 @@ function AppInner() {
     setCurrentView(view)
   }
 
+<<<<<<< HEAD
   const handleLogout = () => {
     setCurrentView(null)
     setShowLanding(true)
   }
 
   // ── 1. Landing page ──────────────────────────────────────────────────────────
+=======
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
   if (showLanding) {
     return <LandingPage onContinue={handleContinue} />
   }

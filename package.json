@@ -12,7 +12,10 @@
   "dependencies": {
     "clsx": "^2.1.0",
     "date-fns": "^3.3.1",
+<<<<<<< HEAD
     "firebase": "^12.15.0",
+=======
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
     "lucide-react": "^0.344.0",
     "mapbox-gl": "^3.26.0",
     "react": "^18.3.1",

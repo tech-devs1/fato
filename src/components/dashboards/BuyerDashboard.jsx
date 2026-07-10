@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+<<<<<<< HEAD
 import {
   ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter,
   MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle,
@@ -10,9 +11,14 @@ import { useAuth } from '../../contexts/AuthContext'
 import MapboxView, { VOLTA_COORDINATES } from '../MapboxView'
 import SettingsDropdown from './SettingsDropdown'
 import { useToast } from '../ui/Toast'
+=======
+import { ShoppingBag, Search, Heart, Package, Truck, TrendingUp, Filter, MapPin, Star, ChevronRight, Clock, CheckCircle, AlertCircle, Navigation } from 'lucide-react'
+import MapboxView, { VOLTA_COORDINATES } from '../MapboxView'
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
 
 export default function BuyerDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('marketplace')
+<<<<<<< HEAD
   const { userProfile, logOut } = useAuth()
   const { toast } = useToast()
   const [selectedDelivery, setSelectedDelivery] = useState(null)
@@ -25,6 +31,9 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
     await logOut()
     if (onLogout) onLogout()
   }
+=======
+  const [selectedDelivery, setSelectedDelivery] = useState(null)
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
 
   const tabs = [
     { id: 'marketplace', label: 'Marketplace', icon: <ShoppingBag className="w-5 h-5" /> },
@@ -199,7 +208,11 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
         {activeTab === 'delivery' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-earth-900">Delivery Tracking</h2>
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
             {selectedDelivery ? (
               <div className="glass rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between">
@@ -253,12 +266,21 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
                 <p className="text-sm text-earth-600">Select any delivery card below to start live map tracking.</p>
               </div>
             )}
+<<<<<<< HEAD
 
             <div className="grid gap-4 md:grid-cols-2">
               {deliveries.map((delivery) => (
                 <DeliveryCard
                   key={delivery.id}
                   delivery={delivery}
+=======
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              {deliveries.map((delivery) => (
+                <DeliveryCard 
+                  key={delivery.id} 
+                  delivery={delivery} 
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
                   isSelected={selectedDelivery?.id === delivery.id}
                   onSelect={() => setSelectedDelivery(delivery)}
                 />
@@ -512,7 +534,11 @@ function DeliveryCard({ delivery, isSelected, onSelect }) {
   }
 
   return (
+<<<<<<< HEAD
     <div
+=======
+    <div 
+>>>>>>> 20fac439a58fb0662dfe78673dbbdcded85369f3
       onClick={onSelect}
       className={`glass rounded-2xl p-6 cursor-pointer hover:scale-[1.02] transition-all duration-300 ${
         isSelected ? 'ring-2 ring-terracotta-500 border-transparent shadow-lg bg-terracotta-50/20' : ''
