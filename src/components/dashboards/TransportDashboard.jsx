@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react'
+import React, { useState } from 'react'
 import { Truck, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, Settings, Route, Fuel, Wrench, Calendar, ChevronRight, Navigation, ShoppingBag, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import ReputationCard from '../reputation/ReputationCard'
@@ -43,8 +43,37 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
     }
   }
 
-  const profile = userFullProfile || mockProfile
-  const displayName = profile.user?.displayName || userProfile?.displayName || 'Kofi'
+  const profile = {
+    user: {
+      displayName: userProfile?.displayName || userFullProfile?.user?.displayName || mockProfile.user.displayName,
+      email: userProfile?.email || userFullProfile?.user?.email || null,
+      phone: userProfile?.phone || userFullProfile?.user?.phone || null,
+    },
+    verification: userFullProfile?.verification || {
+      phone_verified: !!userProfile?.phone,
+      email_verified: !!userProfile?.email,
+      national_id_verified: false,
+      location_verified: true,
+      vehicle_verified: false
+    },
+    reputation: userFullProfile?.reputation || {
+      completed_transactions: 0,
+      successful_transactions: 0,
+      average_rating: 5.0,
+      response_rate: 1.0,
+      reputation_level: 'New Member'
+    },
+    roleProfile: userFullProfile?.roleProfile || {
+      vehicle_type: mockProfile.roleProfile.vehicle_type,
+      vehicle_capacity: mockProfile.roleProfile.vehicle_capacity,
+      verification_status: 'New Transporter',
+      completed_deliveries: 0,
+      average_rating: 5.0,
+      on_time_delivery_rate: 1.0,
+      joined_date: new Date().toISOString()
+    }
+  }
+  const displayName = profile.user?.displayName || 'Kofi'
 
   async function handleLogout() {
     await logOut()

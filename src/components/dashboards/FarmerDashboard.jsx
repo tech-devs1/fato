@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Sprout, Package, Truck, TrendingUp, Heart, Settings, Plus, Search,
   Filter, ChevronRight, AlertCircle, CheckCircle, Clock, Thermometer,
@@ -49,8 +49,35 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
     }
   }
 
-  const profile = userFullProfile || mockProfile
-  const displayName = profile.user?.displayName || userProfile?.displayName || 'Emmanuel'
+  const profile = {
+    user: {
+      displayName: userProfile?.displayName || userFullProfile?.user?.displayName || mockProfile.user.displayName,
+      email: userProfile?.email || userFullProfile?.user?.email || null,
+      phone: userProfile?.phone || userFullProfile?.user?.phone || null,
+    },
+    verification: userFullProfile?.verification || {
+      phone_verified: !!userProfile?.phone,
+      email_verified: !!userProfile?.email,
+      national_id_verified: false,
+      location_verified: true
+    },
+    reputation: userFullProfile?.reputation || {
+      completed_transactions: 0,
+      successful_transactions: 0,
+      average_rating: 5.0,
+      response_rate: 1.0,
+      reputation_level: 'New Member'
+    },
+    roleProfile: userFullProfile?.roleProfile || {
+      farm_name: userProfile?.displayName ? `${userProfile.displayName}'s Farm` : mockProfile.roleProfile.farm_name,
+      verification_status: 'New Farmer',
+      completed_orders: 0,
+      average_rating: 5.0,
+      response_rate: 1.0,
+      joined_date: new Date().toISOString()
+    }
+  }
+  const displayName = profile.user?.displayName || 'Emmanuel'
 
   async function handleLogout() {
     await logOut()
