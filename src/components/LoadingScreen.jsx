@@ -21,31 +21,25 @@ const SHARDS = [
 
 export default function LoadingScreen({ onComplete }) {
   // Animation phases: 'blank' -> 'falling' -> 'reshaping' -> 'vanishing' -> complete
-  const [phase, setPhase] = useState('blank')
-
+  const [phase, setPhase] = useState('falling')
+  
   useEffect(() => {
-    // 1. Initial 3-second blank yellow screen
-    const timerFalling = setTimeout(() => {
-      setPhase('falling')
-    }, 3000)
-
-    // 2. Letters fall and scatter for 2.5 seconds
+    // 1. Letters fall and scatter for 2.5 seconds
     const timerReshaping = setTimeout(() => {
       setPhase('reshaping')
-    }, 5500)
+    }, 2500)
 
-    // 3. Letters reshape and hold for 2.0 seconds
+    // 2. Letters reshape and hold for 2.0 seconds
     const timerVanishing = setTimeout(() => {
       setPhase('vanishing')
-    }, 7500)
+    }, 4500)
 
-    // 4. Fade out completely and trigger callback
+    // 3. Fade out completely and trigger callback
     const timerComplete = setTimeout(() => {
       onComplete()
-    }, 8100)
+    }, 5100)
 
     return () => {
-      clearTimeout(timerFalling)
       clearTimeout(timerReshaping)
       clearTimeout(timerVanishing)
       clearTimeout(timerComplete)
