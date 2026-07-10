@@ -139,6 +139,7 @@ export function AuthProvider({ children }) {
   // ── Email / Password ───────────────────────────────────────────────────────
 
   async function signUp(email, password, displayName, role = 'farmer', phone = '', extra = {}) {
+    localStorage.setItem('agro_is_registering', 'true')
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     await updateProfile(cred.user, { displayName })
     localStorage.setItem(`agro_role_${cred.user.uid}`, role)
@@ -147,6 +148,7 @@ export function AuthProvider({ children }) {
       ? { verification_status: 'pending_review', ...extra }
       : extra
     await createUserDoc(cred.user, { displayName, role, phone, ...transportExtra })
+    localStorage.removeItem('agro_is_registering')
     return cred
   }
 
@@ -174,20 +176,49 @@ export function AuthProvider({ children }) {
     }
     // ── Normal Firebase Sign-In ───────────────────────────────────────────────
     const cred = await signInWithEmailAndPassword(auth, email, password)
-    const savedRole = localStorage.getItem(`agro_role_${cred.user.uid}`) || 'farmer'
-    await createUserDoc(cred.user, { role: savedRole })
+    
+    // Check if the user document exists in firestore
+    const ref = doc(db, 'users', cred.user.uid)
+    const snap = await getDoc(ref)
+    if (!snap.exists()) {
+      await signOut(auth)
+      const err = new Error('No registered account found for this email. Please register first.')
+      err.code = 'auth/user-not-found'
+      throw err
+    }
+    
+    const savedRole = snap.data().role || 'farmer'
+    localStorage.setItem(`agro_role_${cred.user.uid}`, savedRole)
+    setUserProfile(snap.data())
+    await loadFullProfile(cred.user.uid, savedRole)
     return cred
   }
 
   // ── Google ─────────────────────────────────────────────────────────────────
 
-  async function signInWithGoogle(role = 'farmer') {
-    // Store chosen role in localStorage so we can retrieve it after redirect completes
+  async function signInWithGoogle(role = 'farmer', existingOnly = false, extra = {}) {
+    localStorage.setItem('agro_google_login_type', existingOnly ? 'existing' : 'register')
     localStorage.setItem('agro_registration_role', role)
+    if (extra.community) {
+      localStorage.setItem('agro_registration_community', extra.community)
+    }
     try {
       const cred = await signInWithPopup(auth, googleProvider)
-      localStorage.setItem(`agro_role_${cred.user.uid}`, role)
-      await createUserDoc(cred.user, { role })
+      
+      // Check if user document exists in firestore
+      const ref = doc(db, 'users', cred.user.uid)
+      const snap = await getDoc(ref)
+      
+      if (existingOnly && !snap.exists()) {
+        await signOut(auth)
+        const err = new Error('No registered account found for this Google email. Please register first.')
+        err.code = 'auth/user-not-found'
+        throw err
+      }
+
+      const finalRole = snap.exists() ? snap.data().role : role
+      localStorage.setItem(`agro_role_${cred.user.uid}`, finalRole)
+      await createUserDoc(cred.user, { role: finalRole, ...extra })
       return cred
     } catch (err) {
       // Fallback to redirect if popup fails or gets blocked due to browser COOP policies
@@ -254,9 +285,21 @@ export function AuthProvider({ children }) {
     getRedirectResult(auth)
       .then(async (cred) => {
         if (cred) {
-          const savedRole = localStorage.getItem('agro_registration_role') || 'farmer'
+          const loginType = localStorage.getItem('agro_google_login_type') || 'register'
+          const ref = doc(db, 'users', cred.user.uid)
+          const snap = await getDoc(ref)
+          
+          if (loginType === 'existing' && !snap.exists()) {
+            await signOut(auth)
+            alert('No registered account found for this Google email. Please register first.')
+            return
+          }
+
+          const savedRole = snap.exists() ? snap.data().role : (localStorage.getItem('agro_registration_role') || 'farmer')
+          const savedCommunity = snap.exists() ? snap.data().community : (localStorage.getItem('agro_registration_community') || null)
+          
           localStorage.setItem(`agro_role_${cred.user.uid}`, savedRole)
-          await createUserDoc(cred.user, { role: savedRole })
+          await createUserDoc(cred.user, { role: savedRole, community: savedCommunity })
         }
       })
       .catch((err) => {
@@ -268,7 +311,6 @@ export function AuthProvider({ children }) {
       try {
         setCurrentUser(user)
         if (user) {
-          const savedRole = localStorage.getItem(`agro_role_${user.uid}`) || 'farmer'
           const ref = doc(db, 'users', user.uid)
           const snap = await getDoc(ref)
           if (snap.exists()) {
@@ -278,7 +320,13 @@ export function AuthProvider({ children }) {
             setUserProfile(userData)
             await loadFullProfile(user.uid, userData.role)
           } else {
-            await createUserDoc(user, { role: savedRole })
+            const isRegistering = localStorage.getItem('agro_is_registering') === 'true'
+            if (!isRegistering) {
+              // Sign out immediately - unregistered user trying to log in directly
+              await signOut(auth)
+              setUserProfile(null)
+              setUserFullProfile(null)
+            }
           }
         } else {
           setUserProfile(null)

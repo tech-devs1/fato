@@ -194,10 +194,19 @@ function LoginForm({ onSwitch, onDone }) {
         if (!navigator.geolocation) reject(new Error('Geolocation not supported'))
         navigator.geolocation.getCurrentPosition(resolve, () => reject(new Error('Location access required')), { enableHighAccuracy: true })
       })
-      await signInWithGoogle()
+      await signInWithGoogle('farmer', true)
       onDone()
     } catch (err) {
-      setError(err.message || 'Authentication failed')
+      const code = err?.code
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+        setRedirecting(true)
+        setError('')
+        setTimeout(() => {
+          onSwitch('register_role')
+        }, 2500)
+      } else {
+        setError(err.message || 'Authentication failed')
+      }
     } finally {
       setBusy(false)
     }
@@ -404,10 +413,11 @@ function SignupForm({ role, onSwitch, onDone }) {
   async function handleGoogle() {
     setError('')
     setBusy(true)
+    let userCoords = null
     try {
-      await new Promise((resolve, reject) => {
+      userCoords = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
-          resolve,
+          (pos) => resolve([pos.coords.longitude, pos.coords.latitude]),
           (err) => reject(new Error('Location access is strictly required to sign up on this platform. Please enable location permissions.')),
           { enableHighAccuracy: true }
         )
@@ -419,9 +429,23 @@ function SignupForm({ role, onSwitch, onDone }) {
     }
 
     try {
-      await signInWithGoogle(role)
+      // Reverse geocode to get community name before signing up
+      const mapboxToken = localStorage.getItem('mapbox_access_token') || 'pk.eyJ1IjoiZmxhc2gwMDAiLCJhIjoiY21yYmpqNWFnMmRsazJ6cXJiYjltOTV5eSJ9.n6MF1k_RScGprpVTlUIMgQ'
+      let communityName = 'Ho' // default fallback
+      try {
+        const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${userCoords[0]},${userCoords[1]}.json?types=place,locality&access_token=${mapboxToken}`)
+        const data = await res.json()
+        communityName = data?.features?.[0]?.place_name?.split(',')[0] || 'Ho'
+      } catch (err) {
+        console.warn("Geocoding failed during Google signup, using default.", err)
+      }
+
+      localStorage.setItem('agro_is_registering', 'true')
+      await signInWithGoogle(role, false, { community: communityName })
+      localStorage.removeItem('agro_is_registering')
       onDone()
     } catch (err) {
+      localStorage.removeItem('agro_is_registering')
       setError(friendlyError(err))
     } finally {
       setBusy(false)
