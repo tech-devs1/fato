@@ -443,9 +443,17 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
               {recentUsers.length === 0 ? (
                 <p className="text-sm text-earth-500 p-6 text-center">No users match this filter.</p>
               ) : (
-                recentUsers.map((user) => (
-                  <UserCard key={user.id} user={user} />
-                ))
+                recentUsers.map((user) => {
+                  const profile = roleProfiles[user.id] || {}
+                  return (
+                    <UserCard 
+                      key={user.id} 
+                      user={user} 
+                      profile={profile}
+                      onViewDetails={() => setSelectedUser({ user, profile })} 
+                    />
+                  )
+                })
               )}
             </div>
           </div>
@@ -786,7 +794,7 @@ function ActivityItem({ message, time, type }) {
   )
 }
 
-function UserCard({ user }) {
+function UserCard({ user, profile, onViewDetails }) {
   const statusColors = {
     active: 'bg-forest-100 text-forest-700',
     pending: 'bg-gold-100 text-gold-700',
@@ -794,9 +802,21 @@ function UserCard({ user }) {
   }
 
   const roleColors = {
-    Farmer: 'bg-terracotta-100 text-terracotta-700',
-    Buyer: 'bg-forest-100 text-forest-700',
-    Transporter: 'bg-gold-100 text-gold-700',
+    farmer: 'bg-terracotta-100 text-terracotta-700',
+    buyer: 'bg-forest-100 text-forest-700',
+    transport: 'bg-gold-100 text-gold-700',
+    admin: 'bg-purple-100 text-purple-700',
+  }
+
+  // Format creation timestamp
+  let timestampLabel = 'N/A'
+  if (user.createdAt) {
+    const dateObj = user.createdAt.seconds 
+      ? new Date(user.createdAt.seconds * 1000) 
+      : new Date(user.createdAt)
+    timestampLabel = dateObj.toLocaleString()
+  } else if (profile?.joined_date) {
+    timestampLabel = new Date(profile.joined_date).toLocaleString()
   }
 
   return (
@@ -806,22 +826,28 @@ function UserCard({ user }) {
           <h3 className="text-lg font-bold text-earth-900">{user.name}</h3>
           <div className="flex items-center gap-2 text-sm text-earth-600 mt-1">
             <MapPin className="w-4 h-4" />
-            <span>{user.location}</span>
+            <span>{user.location || user.community || 'Not Specified'}</span>
           </div>
         </div>
         <div className="flex gap-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${roleColors[user.role]}`}>
+          <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider ${roleColors[user.role] || 'bg-earth-100 text-earth-700'}`}>
             {user.role}
           </span>
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[user.status]}`}>
-            {user.status}
+          <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider ${statusColors[user.status?.toLowerCase()] || 'bg-earth-100 text-earth-700'}`}>
+            {user.status || 'Active'}
           </span>
         </div>
       </div>
       
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-earth-500">Joined {user.joined}</p>
-        <button className="px-4 py-2 bg-white text-earth-900 rounded-xl font-medium hover:bg-earth-100 transition-colors border border-earth-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-earth-100">
+        <div>
+          <p className="text-xs text-earth-400 font-medium">Registration Timestamp</p>
+          <p className="text-sm font-semibold text-earth-700 mt-0.5">{timestampLabel}</p>
+        </div>
+        <button 
+          onClick={onViewDetails}
+          className="px-4 py-2 bg-white text-earth-900 rounded-xl font-semibold hover:bg-earth-100 transition-colors border border-earth-200 text-xs shrink-0 self-end sm:self-auto"
+        >
           View Details
         </button>
       </div>
