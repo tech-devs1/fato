@@ -5,57 +5,7 @@ import { adminUpdateVerification } from '../../lib/reputationService'
 export default function AdminDashboard({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('overview')
 
-  const [usersPending, setUsersPending] = useState([
-    {
-      id: 'usr_1',
-      name: 'Emmanuel A.',
-      role: 'farmer',
-      farmName: "Emmanuel's Organic Farm",
-      verifications: {
-        phone_verified: true,
-        email_verified: true,
-        national_id_verified: false,
-        location_verified: true,
-      }
-    },
-    {
-      id: 'usr_2',
-      name: 'Grace K.',
-      role: 'farmer',
-      farmName: "Grace's Cassava Hub",
-      verifications: {
-        phone_verified: true,
-        email_verified: false,
-        national_id_verified: false,
-        location_verified: false,
-      }
-    },
-    {
-      id: 'usr_3',
-      name: 'Kofi Mensah',
-      role: 'transport',
-      vehicleType: 'Light Truck',
-      verifications: {
-        phone_verified: true,
-        email_verified: true,
-        national_id_verified: true,
-        location_verified: true,
-        vehicle_verified: false,
-      }
-    },
-    {
-      id: 'usr_4',
-      name: 'Keta Market Co.',
-      role: 'buyer',
-      businessName: 'Keta Market Co.',
-      verifications: {
-        phone_verified: true,
-        email_verified: true,
-        national_id_verified: false,
-        location_verified: false,
-      }
-    }
-  ])
+  const [usersPending, setUsersPending] = useState([])
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-5 h-5" /> },
@@ -67,43 +17,17 @@ export default function AdminDashboard({ onNavigate }) {
     { id: 'reports', label: 'Reports', icon: <FileText className="w-5 h-5" /> },
   ]
 
-  const overviewStats = [
-    { label: 'Total Users', value: '2,847', change: '+12%', icon: <Users />, color: 'terracotta' },
-    { label: 'Active Listings', value: '1,247', change: '+8%', icon: <Package />, color: 'forest' },
-    { label: 'Transport Jobs', value: '156', change: '+15%', icon: <Truck />, color: 'gold' },
-    { label: 'Monthly Revenue', value: '₵45,230', change: '+22%', icon: <TrendingUp />, color: 'earth' },
-  ]
+  const overviewStats = []
 
-  const recentUsers = [
-    { id: 1, name: 'Emmanuel A.', role: 'Farmer', location: 'Ho', status: 'active', joined: 'Today' },
-    { id: 2, name: 'Keta Market Co.', role: 'Buyer', location: 'Keta', status: 'active', joined: 'Yesterday' },
-    { id: 3, name: 'Kofi Mensah', role: 'Transporter', location: 'Ho', status: 'active', joined: '2 days ago' },
-    { id: 4, name: 'Grace K.', role: 'Farmer', location: 'Anloga', status: 'pending', joined: '3 days ago' },
-  ]
+  const recentUsers = []
 
-  const produceListings = [
-    { id: 1, name: 'Cassava', quantity: '500 kg', price: '₵2.50/kg', farmer: 'Emmanuel A.', location: 'Ho', status: 'listed' },
-    { id: 2, name: 'Tomatoes', quantity: '300 kg', price: '₵4.20/kg', farmer: 'Grace K.', location: 'Anloga', status: 'listed' },
-    { id: 3, name: 'Maize', quantity: '750 kg', price: '₵3.10/kg', farmer: 'Kofi M.', location: 'Keta', status: 'pending' },
-  ]
+  const produceListings = []
 
-  const supplyChainActivity = [
-    { id: 1, type: 'order', from: 'Ho', to: 'Keta', status: 'in_transit', progress: 65 },
-    { id: 2, type: 'order', from: 'Anloga', to: 'Ho', status: 'loading', progress: 30 },
-    { id: 3, type: 'order', from: 'Keta', to: 'Anloga', status: 'delivered', progress: 100 },
-  ]
+  const supplyChainActivity = []
 
-  const alerts = [
-    { id: 1, type: 'warning', message: 'High spoilage risk for tomatoes in Anloga', time: '2 hours ago' },
-    { id: 2, type: 'info', message: 'New transport route available: Ho - Keta', time: '4 hours ago' },
-    { id: 3, type: 'success', message: 'Weekly revenue target exceeded by 15%', time: '6 hours ago' },
-  ]
+  const alerts = []
 
-  const regionData = [
-    { region: 'Ho', users: 847, listings: 423, revenue: '₵18,500', growth: '+12%' },
-    { region: 'Anloga', users: 623, listings: 312, revenue: '₵12,300', growth: '+18%' },
-    { region: 'Keta', users: 512, listings: 287, revenue: '₵10,200', growth: '+15%' },
-  ]
+  const regionData = []
 
   return (
     <div className="min-h-screen bg-ivory-50 pb-24">

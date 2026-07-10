@@ -98,11 +98,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
     { id: 'health',    label: 'Post-Harvest',  icon: <Heart className="w-5 h-5" /> },
   ]
 
-  const [myProduce, setMyProduce] = useState([
-    { id: 1, name: 'Cassava',  quantity: '500 kg', price: '₵2.50/kg', freshness: 95, status: 'listed',  location: 'Ho' },
-    { id: 2, name: 'Tomatoes', quantity: '300 kg', price: '₵4.20/kg', freshness: 88, status: 'listed',  location: 'Ho' },
-    { id: 3, name: 'Maize',    quantity: '750 kg', price: '₵3.10/kg', freshness: 92, status: 'pending', location: 'Anloga' },
-  ])
+  const [myProduce, setMyProduce] = useState([])
 
   function handleSaveProduce(newItem) {
     if (produceModalMode === 'edit') {
@@ -117,19 +113,12 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
     setActiveTab('produce')
   }
 
-  const [orders, setOrders] = useState([
-    { id: 2847, buyer: 'Keta Market Co.', items: 'Cassava 200kg',   amount: '₵500',   status: 'confirmed',  date: 'Today' },
-    { id: 2846, buyer: 'Ho Foods Ltd',    items: 'Tomatoes 150kg',  amount: '₵630',   status: 'delivering', date: 'Yesterday' },
-    { id: 2845, buyer: 'Anloga Export',   items: 'Maize 400kg',     amount: '₵1,240', status: 'completed',  date: '2 days ago' },
-  ])
+  const [orders, setOrders] = useState([])
 
   const [orderFilter, setOrderFilter] = useState('all')
   const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter)
 
-  const [transportRequests, setTransportRequests] = useState([
-    { id: 1, from: 'Ho',     to: 'Keta', cargo: 'Cassava 200kg', status: 'matched', driver: 'Kofi Mensah' },
-    { id: 2, from: 'Anloga', to: 'Ho',   cargo: 'Maize 300kg',   status: 'pending', driver: null },
-  ])
+  const [transportRequests, setTransportRequests] = useState([])
   const postHarvestHealth = [
     { produce: 'Cassava',  freshness: 95, spoilageRisk: 'low',    storageTemp: '25°C', humidity: '65%', recommendation: 'Optimal' },
     { produce: 'Tomatoes', freshness: 88, spoilageRisk: 'medium', storageTemp: '22°C', humidity: '70%', recommendation: 'Sell within 3 days' },

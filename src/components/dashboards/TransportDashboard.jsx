@@ -93,17 +93,9 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
     { id: 'vehicle', label: 'Vehicle', icon: <Wrench className="w-5 h-5" /> },
   ]
 
-  const [jobs, setJobs] = useState([
-    { id: 1, from: 'Ho', to: 'Keta', cargo: 'Cassava 200kg', distance: '45 km', payment: '₵150', urgency: 'high', farmer: 'Emmanuel A.' },
-    { id: 2, from: 'Anloga', to: 'Ho', cargo: 'Maize 300kg', distance: '32 km', payment: '₵120', urgency: 'medium', farmer: 'Grace K.' },
-    { id: 3, from: 'Keta', to: 'Anloga', cargo: 'Tomatoes 150kg', distance: '28 km', payment: '₵100', urgency: 'low', farmer: 'Kofi M.' },
-    { id: 4, from: 'Ho', to: 'Keta', cargo: 'Yam 400kg', distance: '45 km', payment: '₵180', urgency: 'high', farmer: 'Comfort D.' },
-  ])
+  const [jobs, setJobs] = useState([])
 
-  const [deliveries, setDeliveries] = useState([
-    { id: 1, order: '#2846', from: 'Ho', to: 'Keta', cargo: 'Cassava 200kg', progress: 65, status: 'in_transit', eta: '2 hours' },
-    { id: 2, order: '#2845', from: 'Anloga', to: 'Ho', cargo: 'Maize 300kg', progress: 30, status: 'loading', eta: '4 hours' },
-  ])
+  const [deliveries, setDeliveries] = useState([])
 
   const handleAcceptJob = (job) => {
     setJobs(prev => prev.filter(j => j.id !== job.id))

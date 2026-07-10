@@ -39,35 +39,16 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
     { id: 'insights',    label: 'Insights',     icon: <TrendingUp className="w-5 h-5" /> },
   ]
 
-  const marketplaceItems = [
-    { id: 1, name: 'Fresh Cassava',       farmer: 'Emmanuel A.', location: 'Ho',     quantity: '500 kg', price: '₵2.50/kg', freshness: 95, rating: 4.8, verification_status: 'Verified Farmer',    responseRate: 0.95 },
-    { id: 2, name: 'Organic Tomatoes',    farmer: 'Grace K.',    location: 'Anloga', quantity: '300 kg', price: '₵4.20/kg', freshness: 92, rating: 4.9, verification_status: 'Growing Reputation', responseRate: 0.98 },
-    { id: 3, name: 'Yellow Maize',        farmer: 'Kofi M.',     location: 'Keta',   quantity: '750 kg', price: '₵3.10/kg', freshness: 88, rating: 4.7, verification_status: 'Verified Farmer',    responseRate: 0.90 },
-    { id: 4, name: 'Puna Yams',           farmer: 'Comfort D.',  location: 'Ho',     quantity: '400 kg', price: '₵5.80/kg', freshness: 94, rating: 4.6, verification_status: 'Trusted Farmer',    responseRate: 0.99 },
-    { id: 5, name: 'Sweet Potatoes',      farmer: 'Samuel T.',   location: 'Anloga', quantity: '250 kg', price: '₵3.50/kg', freshness: 90, rating: 4.5, verification_status: 'New Farmer',        responseRate: 0.85 },
-    { id: 6, name: 'Hot Peppers',         farmer: 'Beatrice A.', location: 'Keta',   quantity: '150 kg', price: '₵6.00/kg', freshness: 96, rating: 4.8, verification_status: 'Trusted Farmer',    responseRate: 1.00 },
-    { id: 7, name: 'White Yam (New)',     farmer: 'Sena Y.',     location: 'Ho',     quantity: '200 kg', price: '₵4.50/kg', freshness: 98, rating: 0,   verification_status: 'Verified Farmer',  isVerified: true, responseRate: 0.95 },
-  ]
+  const marketplaceItems = []
 
   const rankedItems = rankListings(marketplaceItems, 'Ho')
 
-  const [orders, setOrders] = useState([
-    { id: 2847, items: 'Cassava 200kg, Tomatoes 100kg', amount: '₵920',   status: 'processing', date: 'Today',     eta: '2 days' },
-    { id: 2846, items: 'Maize 400kg',                   amount: '₵1,240', status: 'shipped',    date: 'Yesterday', eta: '1 day' },
-    { id: 2845, items: 'Yam 300kg',                     amount: '₵1,740', status: 'delivered',  date: '3 days ago', eta: '-' },
-  ])
+  const [orders, setOrders] = useState([])
   const [orderFilter, setOrderFilter] = useState('all')
 
-  const savedSuppliers = [
-    { id: 1, name: 'Emmanuel A.', location: 'Ho',     products: 12, rating: 4.8, reliability: 98 },
-    { id: 2, name: 'Grace K.',    location: 'Anloga', products: 8,  rating: 4.9, reliability: 99 },
-    { id: 3, name: 'Kofi M.',     location: 'Keta',   products: 15, rating: 4.7, reliability: 95 },
-  ]
+  const savedSuppliers = []
 
-  const deliveries = [
-    { id: 1, order: '#2846', from: 'Ho',     to: 'Keta', status: 'in_transit', progress: 65, driver: 'Kofi Mensah', eta: 'Tomorrow' },
-    { id: 2, order: '#2847', from: 'Anloga', to: 'Ho',   status: 'preparing',  progress: 25, driver: 'Pending',     eta: '2 days' },
-  ]
+  const deliveries = []
 
   return (
     <div className="min-h-screen pb-24" style={{ background: 'linear-gradient(160deg, #eef2ff 0%, #fef7f0 100%)' }}>
