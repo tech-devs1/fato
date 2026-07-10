@@ -4,6 +4,11 @@ import { ToastProvider } from './components/ui/Toast'
 import LoadingScreen from './components/LoadingScreen'
 
 // Lazy-loaded pages to reduce initial JavaScript payload size (<200KB startup cost)
+const isInstalledPWA = () => (
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.matchMedia('(display-mode: fullscreen)').matches ||
+  window.navigator.standalone === true
+);
 const LandingPage = lazy(() => import('./components/LandingPage'))
 const AuthPage = lazy(() => import('./components/auth/AuthPage'))
 const HomeScreen = lazy(() => import('./components/HomeScreen'))
@@ -64,8 +69,13 @@ function AppInner() {
   const handleLoadingComplete = () => {
     setLoading(false)
     if (!currentUser) {
-      setShowLanding(false)
-      setShowAuth(true)
+      if (isInstalledPWA()) {
+        setShowLanding(false)
+        setShowAuth(true)
+      } else {
+        setShowLanding(true)
+        setShowAuth(false)
+      }
     }
   }
 
@@ -167,12 +177,7 @@ export default function App() {
     <ToastProvider>
       <AuthProvider>
         <Suspense fallback={
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'linear-gradient(to bottom right, #FFE999, #FFF9C2, #FDBA74)',
-            zIndex: 9999
-          }} />
+          <div className="fixed inset-0 bg-gradient-to-br from-gold-200 via-gold-300 to-sunset-300 z-50" />
         }>
           <AppInner />
         </Suspense>
