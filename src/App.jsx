@@ -11,9 +11,8 @@ const FarmerDashboard = lazy(() => import('./components/dashboards/FarmerDashboa
 const BuyerDashboard = lazy(() => import('./components/dashboards/BuyerDashboard'))
 const TransportDashboard = lazy(() => import('./components/dashboards/TransportDashboard'))
 const AdminDashboard = lazy(() => import('./components/dashboards/AdminDashboard'))
-const WelcomeScreen = lazy(() => import('./components/WelcomeScreen'))
 
-// Role to default view mapping
+// Role → default view mapping
 const ROLE_HOME = {
   farmer:    'farmer',
   buyer:     'buyer',
@@ -21,27 +20,14 @@ const ROLE_HOME = {
   admin:     'admin',
 }
 
-// Detect if running as an installed PWA (standalone / fullscreen display mode)
-function isInstalledPWA() {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.matchMedia('(display-mode: fullscreen)').matches ||
-    window.navigator.standalone === true // iOS Safari
-  )
-}
-
 // ── Inner app — has access to auth context ─────────────────────────────────────
 function AppInner() {
-  // authLoading = true until Firebase onAuthStateChanged fires for the first time
-  const { currentUser, userProfile, loading: authLoading } = useAuth()
-
-  // splashDone = true once the LoadingScreen animation completes its callback
-  const [splashDone,  setSplashDone]  = useState(false)
-  // showWelcome = true only on first ever launch (cleared after user sees it)
-  const [showWelcome, setShowWelcome] = useState(
-    () => !localStorage.getItem('nunya_welcome_seen') && !currentUser
-  )
-  const [showLanding, setShowLanding] = useState(false)
+  const { currentUser, userProfile } = useAuth()
+  const [loading,     setLoading]     = useState(true)
+  const [showLanding, setShowLanding] = useState(() => {
+    const saved = localStorage.getItem('nunya_show_landing')
+    return saved !== null ? JSON.parse(saved) : true
+  })
   const [showAuth,    setShowAuth]    = useState(() => {
     const saved = localStorage.getItem('nunya_show_auth')
     return saved !== null ? JSON.parse(saved) : false
@@ -51,8 +37,11 @@ function AppInner() {
     return saved || null
   })
 
-  // Persist to localStorage (showLanding intentionally NOT persisted —
-  // it is always derived fresh from PWA detection + auth state each session)
+  // Persist state to localStorage
+  useEffect(() => {
+    localStorage.setItem('nunya_show_landing', JSON.stringify(showLanding))
+  }, [showLanding])
+
   useEffect(() => {
     localStorage.setItem('nunya_show_auth', JSON.stringify(showAuth))
   }, [showAuth])
@@ -72,45 +61,11 @@ function AppInner() {
     }
   }, [currentUser, userProfile])
 
-  // KEY FIX: Wait for BOTH splash animation AND Firebase auth to resolve
-  // before making any routing decision. This eliminates the white screen
-  // that occurred when the splash finished before Firebase was ready.
-  useEffect(() => {
-    if (!splashDone || authLoading) return
-
-    if (currentUser) {
-      // Already logged in — go straight to dashboard
-      setShowLanding(false)
-      setShowAuth(false)
-      setShowWelcome(false) // Skip welcome if already logged in
-    } else {
-      if (isInstalledPWA()) {
-        // Installed PWA — skip landing page, go straight to sign-in (or welcome)
-        setShowLanding(false)
-        if (showWelcome) {
-          // Welcome shown, auth comes after
-        } else {
-          setShowAuth(true)
-        }
-      } else {
-        // Browser — show the landing page first
-        setShowLanding(!showWelcome) // delay landing until after welcome
-        setShowAuth(false)
-      }
-    }
-  }, [splashDone, authLoading, currentUser])
-
-  const handleLoadingComplete = () => setSplashDone(true)
-
-  const handleWelcomeDone = () => {
-    localStorage.setItem('nunya_welcome_seen', '1')
-    setShowWelcome(false)
+  const handleLoadingComplete = () => {
+    setLoading(false)
     if (!currentUser) {
-      if (isInstalledPWA()) {
-        setShowAuth(true)
-      } else {
-        setShowLanding(true)
-      }
+      setShowLanding(false)
+      setShowAuth(true)
     }
   }
 
@@ -120,44 +75,39 @@ function AppInner() {
   }
 
   const handleAuthenticated = () => {
-    setShowAuth(false);
-    setShowLanding(false);
-    // currentView will be set by the userProfile useEffect once profile loads
+    setShowAuth(false)
+    // currentView will be set by useEffect once userProfile loads
   }
 
-  const handleNavigate = (view) => setCurrentView(view)
+  const handleNavigate = (view) => {
+    setCurrentView(view)
+  }
 
   const handleLogout = () => {
     setCurrentView(null)
+    setShowLanding(true)
+    // Clear persisted state on logout
+    localStorage.removeItem('nunya_show_landing')
     localStorage.removeItem('nunya_show_auth')
     localStorage.removeItem('nunya_current_view')
-    if (isInstalledPWA()) {
-      setShowLanding(false)
-      setShowAuth(true)
-    } else {
-      setShowLanding(true)
-      setShowAuth(false)
-    }
   }
 
-  // ── 0. Splash Screen ─────────────────────────────────────────────────────────
-  // Show splash until BOTH animation is complete AND Firebase auth is ready.
-  // This prevents any white-screen gap between splash and the next screen.
-  if (!splashDone || authLoading) {
+  // ── 0. Loading Screen ────────────────────────────────────────────────────────
+  if (loading) {
     return <LoadingScreen onComplete={handleLoadingComplete} />
   }
 
-  // ── 1. Welcome Screen (first launch only) ────────────────────────────────────
-  if (showWelcome) {
-    return <WelcomeScreen onContinue={handleWelcomeDone} />
+  // ── 0.5. Profile Completion ───────────────────────────────────────────────────
+  if (needsProfileCompletion && currentUser) {
+    return <ProfileCompletion onComplete={handleProfileComplete} />
   }
 
-  // ── 2. Landing page ──────────────────────────────────────────────────────────
+  // ── 1. Landing page ──────────────────────────────────────────────────────────
   if (showLanding) {
     return <LandingPage onContinue={handleContinue} />
   }
 
-  // ── 3. Auth gate ─────────────────────────────────────────────────────────────
+  // ── 2. Auth gate ─────────────────────────────────────────────────────────────
   if (!currentUser || showAuth) {
     return <AuthPage onAuthenticated={handleAuthenticated} />
   }
@@ -216,7 +166,14 @@ export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <Suspense fallback={null}>
+        <Suspense fallback={
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'linear-gradient(to bottom right, #FFE999, #FFF9C2, #FDBA74)',
+            zIndex: 9999
+          }} />
+        }>
           <AppInner />
         </Suspense>
       </AuthProvider>
