@@ -29,30 +29,7 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
   // Chat modal state
   const [chatRecipient, setChatRecipient] = useState(null)
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const mockProfile = {
-    user: { displayName: 'Emmanuel A.' },
-    verification: {
-      phone_verified: true,
-      email_verified: true,
-      national_id_verified: true,
-      location_verified: true
-    },
-    reputation: {
-      completed_transactions: 12,
-      successful_transactions: 12,
-      average_rating: 4.9,
-      response_rate: 0.98,
-      reputation_level: 'Active Member'
-    },
-    roleProfile: {
-      farm_name: "Emmanuel's Organic Farm",
-      verification_status: 'Verified Farmer',
-      completed_orders: 12,
-      average_rating: 4.9,
-      response_rate: 0.98,
-      joined_date: '2024-01-10T12:00:00Z'
-    }
-  }
+  const mockProfile = {}
 
   const profile = {
     user: {
@@ -98,7 +75,10 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
     { id: 'health',    label: 'Post-Harvest',  icon: <Heart className="w-5 h-5" /> },
   ]
 
-  const [myProduce, setMyProduce] = useState([])
+  const [myProduce, setMyProduce] = useState([
+    { id: 1, name: 'Fresh Cassava', quantity: '500 kg', price: '₵2.50/kg', status: 'listed', freshness: 95, location: 'Ho' },
+    { id: 2, name: 'Red Tomatoes',  quantity: '200 kg', price: '₵4.20/kg', status: 'listed', freshness: 88, location: 'Anloga' },
+  ])
 
   function handleSaveProduce(newItem) {
     if (produceModalMode === 'edit') {
@@ -113,16 +93,22 @@ export default function FarmerDashboard({ onNavigate, onLogout }) {
     setActiveTab('produce')
   }
 
-  const [orders, setOrders] = useState([])
+  const [orders, setOrders] = useState([
+    { id: 2847, buyer: 'Keta Market Co.', items: 'Cassava 200kg',   amount: '₵500',   status: 'confirmed',  date: 'Today' },
+    { id: 2846, buyer: 'Ho Foods Ltd',    items: 'Tomatoes 150kg',  amount: '₵630',   status: 'delivering', date: 'Yesterday' },
+    { id: 2845, buyer: 'Anloga Export',   items: 'Maize 400kg',     amount: '₵1,240', status: 'completed',  date: '2 days ago' },
+  ])
 
   const [orderFilter, setOrderFilter] = useState('all')
   const filteredOrders = orderFilter === 'all' ? orders : orders.filter(o => o.status === orderFilter)
 
-  const [transportRequests, setTransportRequests] = useState([])
+  const [transportRequests, setTransportRequests] = useState([
+    { id: 1, from: 'Ho',     to: 'Keta', cargo: 'Cassava 200kg', status: 'matched', driver: 'Kofi Mensah' },
+    { id: 2, from: 'Anloga', to: 'Ho',   cargo: 'Maize 300kg',   status: 'pending', driver: null },
+  ])
   const postHarvestHealth = [
     { produce: 'Cassava',  freshness: 95, spoilageRisk: 'low',    storageTemp: '25°C', humidity: '65%', recommendation: 'Optimal' },
     { produce: 'Tomatoes', freshness: 88, spoilageRisk: 'medium', storageTemp: '22°C', humidity: '70%', recommendation: 'Sell within 3 days' },
-    { produce: 'Maize',    freshness: 92, spoilageRisk: 'low',    storageTemp: '20°C', humidity: '60%', recommendation: 'Optimal' },
   ]
 
   return (
@@ -512,15 +498,19 @@ function ActivityItem({ message, time, type }) {
 }
 
 function ProduceCard({ produce, onDelete, onEdit }) {
-  const { toast } = useToast()
+  const { toast } = useToast();
   const statusColors = {
     listed:  'bg-forest-100 text-forest-700',
     pending: 'bg-gold-100 text-gold-700',
     sold:    'bg-earth-100 text-earth-700',
-  }
+  };
 
   return (
     <div className="glass rounded-2xl p-6 hover:scale-[1.02] transition-transform duration-300">
+      {/* Image */}
+      {produce.image && (
+        <img src={URL.createObjectURL(produce.image)} alt={produce.name} className="w-full h-40 object-cover rounded mb-4" />
+      )}
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-earth-900">{produce.name}</h3>
@@ -554,15 +544,18 @@ function ProduceCard({ produce, onDelete, onEdit }) {
           Edit
         </button>
         <button
-          onClick={() => { onDelete(produce.id); toast(`${produce.name} removed from listings.`, 'error') }}
+          onClick={() => { onDelete(produce.id); toast(`${produce.name} removed from listings.`, 'error'); }}
           className="flex-1 px-4 py-2 bg-white text-red-600 rounded-xl font-medium hover:bg-red-50 transition-colors border border-red-200"
         >
           Remove
         </button>
       </div>
     </div>
-  )
+  );
 }
+
+
+
 
 function OrderCard({ order, onUpdateStatus, onContact }) {
   const { toast } = useToast()
@@ -741,33 +734,53 @@ function NavItem({ icon, label, active, onClick, color = '#c1440e' }) {
   )
 }
 
+// ── Error Banner ──────────────────────────────────────────────────────────────
+function ErrorBanner({ msg }) {
+  if (!msg) return null
+  return (
+    <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+      <AlertCircle className="w-4 h-4 shrink-0" />
+      <span>{msg}</span>
+    </div>
+  )
+}
+
 // ── Add/Edit Produce Modal ────────────────────────────────────────────────────────
 function AddProduceModal({ mode, produce, onClose, onSave }) {
-  const [name, setName]           = useState('')
-  const [quantity, setQuantity]   = useState('')
-  const [unit, setUnit]           = useState('kg')
-  const [price, setPrice]         = useState('')
-  const [location, setLocation]   = useState('Ho')
-  const [freshness, setFreshness] = useState(90)
-  const [busy, setBusy]           = useState(false)
+  const [name, setName]           = useState('');
+  const [quantity, setQuantity]   = useState('');
+  const [unit, setUnit]           = useState('kg');
+  const [price, setPrice]         = useState('');
+  const [location, setLocation]   = useState('Ho');
+  const [freshness, setFreshness] = useState(90);
+  const [busy, setBusy]           = useState(false);
+  const [error, setError]         = useState('');
+  const [imageFile, setImageFile] = useState(null);
 
   useEffect(() => {
     if (mode === 'edit' && produce) {
-      setName(produce.name)
-      const qtyNum = parseInt(produce.quantity) || ''
-      const qtyUnit = produce.quantity.split(' ')[1] || 'kg'
-      setQuantity(qtyNum)
-      setUnit(qtyUnit)
-      const priceNum = produce.price.replace(/[^\d.]/g, '') || ''
-      setPrice(priceNum)
-      setLocation(produce.location || 'Ho')
-      setFreshness(produce.freshness || 90)
+      setName(produce.name);
+      const qtyNum = parseInt(produce.quantity) || '';
+      const qtyUnit = produce.quantity.split(' ')[1] || 'kg';
+      setQuantity(qtyNum);
+      setUnit(qtyUnit);
+      const priceNum = produce.price.replace(/[^\\d.]/g, '') || '';
+      setPrice(priceNum);
+      setLocation(produce.location || 'Ho');
+      setFreshness(produce.freshness || 90);
+      setImageFile(produce.image || null);
     }
-  }, [mode, produce])
+  }, [mode, produce]);
 
   function handleSubmit(e) {
-    e.preventDefault()
-    setBusy(true)
+    e.preventDefault();
+    if (!imageFile) {
+      setError('Please upload an image of the produce.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    // Simulate async save
     setTimeout(() => {
       onSave({
         name,
@@ -775,9 +788,10 @@ function AddProduceModal({ mode, produce, onClose, onSave }) {
         price: `₵${price}/${unit}`,
         freshness: Number(freshness),
         location,
-      })
-      setBusy(false)
-    }, 600)
+        image: imageFile,
+      });
+      setBusy(false);
+    }, 600);
   }
 
   return (
@@ -796,6 +810,8 @@ function AddProduceModal({ mode, produce, onClose, onSave }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Error Banner */}
+          {error && <ErrorBanner msg={error} />}
           {/* Produce Name */}
           <div>
             <label className="block text-sm font-semibold text-earth-700 mb-1">Produce Name</label>
@@ -825,90 +841,85 @@ function AddProduceModal({ mode, produce, onClose, onSave }) {
               <select
                 value={unit}
                 onChange={e => setUnit(e.target.value)}
-                className="px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900 bg-white"
+                className="px-3 py-2 rounded-xl border border-earth-200 bg-white focus:outline-none focus:ring-2 focus:ring-forest-500"
               >
                 <option value="kg">kg</option>
-                <option value="bags">bags</option>
-                <option value="crates">crates</option>
-                <option value="tonnes">tonnes</option>
+                <option value="g">g</option>
+                <option value="lb">lb</option>
               </select>
             </div>
           </div>
 
           {/* Price */}
           <div>
-            <label className="block text-sm font-semibold text-earth-700 mb-1">Price per unit (₵)</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-earth-500 font-semibold">₵</span>
-              <input
-                type="number"
-                value={price}
-                onChange={e => setPrice(e.target.value)}
-                placeholder="e.g. 2.50"
-                step="0.01"
-                min="0"
-                className="w-full pl-9 pr-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900"
-                required
-              />
-            </div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Price per Unit</label>
+            <input
+              type="number"
+              value={price}
+              onChange={e => setPrice(e.target.value)}
+              placeholder="e.g. 2.5"
+              min="0"
+              step="0.01"
+              className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900"
+              required
+            />
           </div>
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-semibold text-earth-700 mb-1">Farm Location</label>
-            <select
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Location</label>
+            <input
+              type="text"
               value={location}
               onChange={e => setLocation(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900 bg-white"
-            >
-              <option value="Ho">Ho</option>
-              <option value="Anloga">Anloga</option>
-              <option value="Keta">Keta</option>
-              <option value="Sogakope">Sogakope</option>
-            </select>
+              placeholder="e.g. Ho"
+              className="w-full px-4 py-3 rounded-xl border border-earth-200 focus:outline-none focus:ring-2 focus:ring-forest-500 text-earth-900"
+              required
+            />
           </div>
 
           {/* Freshness */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-semibold text-earth-700">Freshness</label>
-              <span className="text-sm font-bold text-forest-600">{freshness}%</span>
-            </div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Freshness (%)</label>
             <input
               type="range"
-              min="50"
+              min="0"
               max="100"
               value={freshness}
               onChange={e => setFreshness(e.target.value)}
-              className="w-full accent-forest-600"
+              className="w-full"
             />
-            <div className="flex justify-between text-xs text-earth-400 mt-1">
-              <span>50% — Aging</span>
-              <span>100% — Just Harvested</span>
-            </div>
+            <div className="text-sm text-earth-500 text-center mt-1">{freshness}%</div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 border border-earth-200 rounded-xl text-earth-700 font-semibold hover:bg-earth-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex-1 py-3 bg-gradient-to-r from-forest-600 to-forest-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200 disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>{mode === 'edit' ? 'Save Changes' : 'List Produce'}</>}
-            </button>
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-semibold text-earth-700 mb-1">Produce Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={e => setImageFile(e.target.files[0] || null)}
+              className="w-full text-earth-500"
+            />
+            {imageFile && (
+              <div className="mt-2">
+                <img src={URL.createObjectURL(imageFile)} alt="Produce" className="max-h-32 rounded" />
+              </div>
+            )}
           </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={busy}
+            className="w-full py-3 bg-terracotta-600 text-white rounded-xl font-medium hover:bg-terracotta-700 transition-colors disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : (mode === 'edit' ? 'Update Produce' : 'Add Produce')}
+          </button>
         </form>
       </div>
     </div>
-  )
+  );
 }
 
 // ── Transport Request Modal ──────────────────────────────────────────────────

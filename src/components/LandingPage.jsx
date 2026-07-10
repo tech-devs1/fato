@@ -1,19 +1,53 @@
-import React, { useState } from 'react'
-import { ArrowRight, Download, Smartphone, MapPin, TrendingUp, Truck, Shield, Sparkles } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { ArrowRight, Download, Smartphone, MapPin, TrendingUp, Truck, Shield, Sparkles, X, Apple } from 'lucide-react'
 
 export default function LandingPage({ onContinue }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [isIOS, setIsIOS] = useState(false)
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false)
+  const [showDesktopInstructions, setShowDesktopInstructions] = useState(false)
+  const [canInstall, setCanInstall] = useState(false)
+
+  useEffect(() => {
+    // Detect iOS device
+    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+    setIsIOS(isIOSDevice)
+
+    // Listen for beforeinstallprompt event (Chrome/Edge/Android)
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+      setCanInstall(true)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    // Check if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setCanInstall(false)
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
+  }, [])
 
   const handleInstall = async () => {
+    if (isIOS) {
+      setShowIOSInstructions(true)
+      return
+    }
+
     if (deferredPrompt) {
       deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
       if (outcome === 'accepted') {
         setDeferredPrompt(null)
+        setCanInstall(false)
       }
     } else {
-      // Fallback for browsers that don't support PWA install
-      alert('To install Nunya AI, look for the "Add to Home Screen" option in your browser menu.')
+      // Show desktop instructions for Chrome/Edge users
+      setShowDesktopInstructions(true)
     }
   }
 
@@ -66,8 +100,8 @@ export default function LandingPage({ onContinue }) {
                 onClick={handleInstall}
                 className="group relative px-8 py-4 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-3 min-w-[280px] justify-center"
               >
-                <Download className="w-5 h-5" />
-                <span>Install App</span>
+                {isIOS ? <Apple className="w-5 h-5" /> : <Download className="w-5 h-5" />}
+                <span>{isIOS ? 'Add to Home Screen' : 'Install App'}</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               
@@ -118,6 +152,121 @@ export default function LandingPage({ onContinue }) {
           <p>© 2024 Nunya AI. Smart Agricultural Commerce for Growing Communities.</p>
         </div>
       </div>
+
+      {/* iOS Instructions Modal */}
+      {showIOSInstructions && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-earth-900">Add to Home Screen</h3>
+              <button
+                onClick={() => setShowIOSInstructions(false)}
+                className="p-2 hover:bg-earth-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-earth-600" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-terracotta-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-terracotta-700 font-bold text-sm">1</span>
+                </div>
+                <p className="text-earth-700">Tap the <strong>Share</strong> button in Safari's bottom toolbar</p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-terracotta-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-terracotta-700 font-bold text-sm">2</span>
+                </div>
+                <p className="text-earth-700">Scroll down and tap <strong>"Add to Home Screen"</strong></p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-terracotta-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-terracotta-700 font-bold text-sm">3</span>
+                </div>
+                <p className="text-earth-700">Tap <strong>"Add"</strong> in the top right corner</p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-terracotta-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-terracotta-700 font-bold text-sm">4</span>
+                </div>
+                <p className="text-earth-700">The Nunya AI icon will appear on your home screen!</p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-ivory-50 rounded-xl">
+              <p className="text-sm text-earth-600 text-center">
+                <Apple className="w-4 h-4 inline mr-1" />
+                This will add Nunya AI to your home screen for quick access, just like a native app.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowIOSInstructions(false)}
+              className="mt-6 w-full py-3 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Instructions Modal */}
+      {showDesktopInstructions && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-earth-900">Install Nunya AI</h3>
+              <button
+                onClick={() => setShowDesktopInstructions(false)}
+                className="p-2 hover:bg-earth-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-earth-600" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-terracotta-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-terracotta-700 font-bold text-sm">1</span>
+                </div>
+                <p className="text-earth-700">Look for the <strong>install icon (⊕)</strong> in your browser's address bar</p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-terracotta-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-terracotta-700 font-bold text-sm">2</span>
+                </div>
+                <p className="text-earth-700">Or click the <strong>three-dot menu</strong> and select "Install Nunya AI" or "Add to desktop"</p>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-terracotta-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-terracotta-700 font-bold text-sm">3</span>
+                </div>
+                <p className="text-earth-700">Follow the prompts to complete installation</p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-ivory-50 rounded-xl">
+              <p className="text-sm text-earth-600 text-center">
+                <Download className="w-4 h-4 inline mr-1" />
+                This will install Nunya AI as a desktop application for quick access.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowDesktopInstructions(false)}
+              className="mt-6 w-full py-3 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

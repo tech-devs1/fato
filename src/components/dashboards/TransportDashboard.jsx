@@ -54,29 +54,9 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
       email: userProfile?.email || userFullProfile?.user?.email || null,
       phone: userProfile?.phone || userFullProfile?.user?.phone || null,
     },
-    verification: userFullProfile?.verification || {
-      phone_verified: !!userProfile?.phone,
-      email_verified: !!userProfile?.email,
-      national_id_verified: false,
-      location_verified: true,
-      vehicle_verified: false
-    },
-    reputation: userFullProfile?.reputation || {
-      completed_transactions: 0,
-      successful_transactions: 0,
-      average_rating: 5.0,
-      response_rate: 1.0,
-      reputation_level: 'New Member'
-    },
-    roleProfile: userFullProfile?.roleProfile || {
-      vehicle_type: mockProfile.roleProfile.vehicle_type,
-      vehicle_capacity: mockProfile.roleProfile.vehicle_capacity,
-      verification_status: 'New Transporter',
-      completed_deliveries: 0,
-      average_rating: 5.0,
-      on_time_delivery_rate: 1.0,
-      joined_date: new Date().toISOString()
-    }
+    verification: userFullProfile?.verification || mockProfile.verification,
+    reputation: userFullProfile?.reputation || mockProfile.reputation,
+    roleProfile: userFullProfile?.roleProfile || mockProfile.roleProfile
   }
   const displayName = profile.user?.displayName || 'Kofi'
 
@@ -93,9 +73,14 @@ export default function TransportDashboard({ onNavigate, onLogout }) {
     { id: 'vehicle', label: 'Vehicle', icon: <Wrench className="w-5 h-5" /> },
   ]
 
-  const [jobs, setJobs] = useState([])
+  const [jobs, setJobs] = useState([
+    { id: 1, from: 'Ho', to: 'Keta', cargo: 'Cassava 200kg', payout: '₵350', status: 'available' },
+    { id: 2, from: 'Anloga', to: 'Ho', cargo: 'Maize 300kg', payout: '₵400', status: 'available' },
+  ])
 
-  const [deliveries, setDeliveries] = useState([])
+  const [deliveries, setDeliveries] = useState([
+    { id: 1, order: '#2846', from: 'Anloga', to: 'Ho', cargo: 'Tomatoes 150kg', progress: 40, status: 'in_transit', eta: '1 hour' },
+  ])
 
   const handleAcceptJob = (job) => {
     setJobs(prev => prev.filter(j => j.id !== job.id))
