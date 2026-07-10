@@ -28,6 +28,7 @@ export function AuthProvider({ children }) {
   const [userProfile, setUserProfile] = useState(null)
   const [userFullProfile, setUserFullProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false)
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -65,6 +66,7 @@ export function AuthProvider({ children }) {
           photoURL: firebaseUser.photoURL ?? null,
           role: finalRole,
           createdAt: serverTimestamp(),
+          profileComplete: false, // Track if profile is complete
           ...extra,
         })
         
@@ -74,7 +76,16 @@ export function AuthProvider({ children }) {
           phone: firebaseUser.phoneNumber,
           ...extra
         })
+        
+        // New user needs profile completion
+        setNeedsProfileCompletion(true)
       } else {
+        // Check if profile is complete
+        const userData = snap.data()
+        if (!userData.profileComplete) {
+          setNeedsProfileCompletion(true)
+        }
+        
         // Ensure subdocs exist (fallback for legacy or half-created accounts)
         const repRef = doc(db, 'user_reputation', firebaseUser.uid)
         const repSnap = await getDoc(repRef)
@@ -300,6 +311,8 @@ export function AuthProvider({ children }) {
     userProfile,
     userFullProfile,
     loading,
+    needsProfileCompletion,
+    setNeedsProfileCompletion,
     signUp,
     signIn,
     signInWithGoogle,

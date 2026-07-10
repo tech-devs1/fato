@@ -64,6 +64,18 @@ export default function MapboxView({
     return null
   }
 
+  // Load Mapbox CSS dynamically if not already loaded
+  useEffect(() => {
+    const CSS_ID = 'mapbox-gl-css'
+    if (!document.getElementById(CSS_ID)) {
+      const link = document.createElement('link')
+      link.id = CSS_ID
+      link.rel = 'stylesheet'
+      link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css'
+      document.head.appendChild(link)
+    }
+  }, [])
+
   // Initialize Map
   useEffect(() => {
     if (!mapContainer.current || !token) return

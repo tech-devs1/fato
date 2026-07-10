@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense, lazy } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './components/ui/Toast'
-import LandingPage from './components/LandingPage'
-import AuthPage from './components/auth/AuthPage'
-import HomeScreen from './components/HomeScreen'
-import FarmerDashboard from './components/dashboards/FarmerDashboard'
-import BuyerDashboard from './components/dashboards/BuyerDashboard'
-import TransportDashboard from './components/dashboards/TransportDashboard'
-import AdminDashboard from './components/dashboards/AdminDashboard'
 import LoadingScreen from './components/LoadingScreen'
+
+// Lazy-loaded pages to reduce initial JavaScript payload size (<200KB startup cost)
+const LandingPage = lazy(() => import('./components/LandingPage'))
+const AuthPage = lazy(() => import('./components/auth/AuthPage'))
+const HomeScreen = lazy(() => import('./components/HomeScreen'))
+const FarmerDashboard = lazy(() => import('./components/dashboards/FarmerDashboard'))
+const BuyerDashboard = lazy(() => import('./components/dashboards/BuyerDashboard'))
+const TransportDashboard = lazy(() => import('./components/dashboards/TransportDashboard'))
+const AdminDashboard = lazy(() => import('./components/dashboards/AdminDashboard'))
 
 // Role → default view mapping
 const ROLE_HOME = {
@@ -159,7 +161,16 @@ export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <AppInner />
+        <Suspense fallback={
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'linear-gradient(to bottom right, #FFE999, #FFF9C2, #FDBA74)',
+            zIndex: 9999
+          }} />
+        }>
+          <AppInner />
+        </Suspense>
       </AuthProvider>
     </ToastProvider>
   )
