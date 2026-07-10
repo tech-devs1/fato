@@ -26,7 +26,13 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
       snapshot.forEach(docSnap => {
         usersList.push({ id: docSnap.id, ...docSnap.data() });
       });
+      console.log('Users loaded from Firestore:', usersList);
       setAllUsers(usersList);
+    }, (error) => {
+      console.error('Firestore permission error:', error);
+      if (error.code === 'permission-denied') {
+        toast('Permission denied. Please check Firestore security rules.', 'error');
+      }
     });
     return unsub;
   }, []);
@@ -161,7 +167,11 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
       }
     });
 
-    return mergedList.map(user => {
+    console.log('Merged user list before processing:', mergedList);
+    console.log('Role profiles:', roleProfiles);
+    console.log('Current user role filter:', userRoleFilter);
+
+    const processed = mergedList.map(user => {
       const isMock = user.id.startsWith('usr_');
       const profile = (isMock ? MOCK_ROLE_PROFILES[user.id] : roleProfiles[user.id]) || {};
       
@@ -185,16 +195,25 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
         joined: formattedJoined,
         joinedDate: joinedDate, // Keep raw date for sorting
       };
-    }).filter(u => {
+    });
+
+    const filtered = processed.filter(u => {
       if (userRoleFilter === 'all') return true;
       return u.role === userRoleFilter;
-    }).sort((a, b) => {
+    });
+
+    console.log('Users after filtering:', filtered);
+
+    const sorted = filtered.sort((a, b) => {
       // Sort by joined date (newest first)
       if (!a.joinedDate && !b.joinedDate) return 0;
       if (!a.joinedDate) return 1;
       if (!b.joinedDate) return -1;
       return new Date(b.joinedDate) - new Date(a.joinedDate);
     });
+
+    console.log('Final sorted users:', sorted);
+    return sorted;
   }, [allUsers, roleProfiles, userRoleFilter]);
 
   const supplyChainActivity = React.useMemo(() => {

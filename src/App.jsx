@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './components/ui/Toast'
 import LandingPage from './components/LandingPage'
@@ -8,6 +8,7 @@ import FarmerDashboard from './components/dashboards/FarmerDashboard'
 import BuyerDashboard from './components/dashboards/BuyerDashboard'
 import TransportDashboard from './components/dashboards/TransportDashboard'
 import AdminDashboard from './components/dashboards/AdminDashboard'
+import LoadingScreen from './components/LoadingScreen'
 
 // Role → default view mapping
 const ROLE_HOME = {
@@ -20,6 +21,7 @@ const ROLE_HOME = {
 // ── Inner app — has access to auth context ─────────────────────────────────────
 function AppInner() {
   const { currentUser, userProfile } = useAuth()
+  const [loading,     setLoading]     = useState(true)
   const [showLanding, setShowLanding] = useState(() => {
     const saved = localStorage.getItem('nunya_show_landing')
     return saved !== null ? JSON.parse(saved) : true
@@ -57,6 +59,14 @@ function AppInner() {
     }
   }, [currentUser, userProfile])
 
+  const handleLoadingComplete = () => {
+    setLoading(false)
+    if (!currentUser) {
+      setShowLanding(false)
+      setShowAuth(true)
+    }
+  }
+
   const handleContinue = () => {
     setShowLanding(false)
     if (!currentUser) setShowAuth(true)
@@ -78,6 +88,11 @@ function AppInner() {
     localStorage.removeItem('nunya_show_landing')
     localStorage.removeItem('nunya_show_auth')
     localStorage.removeItem('nunya_current_view')
+  }
+
+  // ── 0. Loading Screen ────────────────────────────────────────────────────────
+  if (loading) {
+    return <LoadingScreen onComplete={handleLoadingComplete} />
   }
 
   // ── 1. Landing page ──────────────────────────────────────────────────────────
