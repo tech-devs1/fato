@@ -120,7 +120,8 @@ function AppInner() {
   }
 
   const handleAuthenticated = () => {
-    setShowAuth(false)
+    setShowAuth(false);
+    setShowLanding(false);
     // currentView will be set by the userProfile useEffect once profile loads
   }
 
