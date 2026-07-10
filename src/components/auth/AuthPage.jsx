@@ -100,9 +100,11 @@ export default function AuthPage({ onAuthenticated }) {
         {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-terracotta-500 to-terracotta-700 rounded-2xl flex items-center justify-center shadow-lg">
-              <Sparkles className="w-7 h-7 text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Nunya AI Logo" 
+              className="w-12 h-12 rounded-2xl object-cover shadow-lg"
+            />
             <span className="text-3xl font-bold text-earth-900">Nunya AI</span>
           </div>
           <p className="text-earth-500 text-sm">Smart Agricultural Commerce · Volta Region</p>

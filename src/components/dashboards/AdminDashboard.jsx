@@ -9,48 +9,58 @@ import SettingsDropdown from './SettingsDropdown'
 
 export default function AdminDashboard({ onNavigate, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview')
-  const { logOut } = useAuth()
+  const { logOut, currentUser } = useAuth()
   const { toast } = useToast()
 
   const [allUsers, setAllUsers] = useState([])
   const [verifications, setVerifications] = useState({})
   const [roleProfiles, setRoleProfiles] = useState({})
+  const [permissionDenied, setPermissionDenied] = useState(false)
 
   const [userRoleFilter, setUserRoleFilter] = useState('all')
   const [verificationRoleFilter, setVerificationRoleFilter] = useState('all')
 
-  // Real-time listener for users
+  // Real-time listener for users — only attach if we have an authenticated user
   useEffect(() => {
+    if (!currentUser) return
     const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
       const usersList = [];
       snapshot.forEach(docSnap => {
         usersList.push({ id: docSnap.id, ...docSnap.data() });
       });
-      console.log('Users loaded from Firestore:', usersList);
       setAllUsers(usersList);
+      setPermissionDenied(false);
     }, (error) => {
-      console.error('Firestore permission error:', error);
+      console.error('Firestore users listener error:', error);
       if (error.code === 'permission-denied') {
-        toast('Permission denied. Please check Firestore security rules.', 'error');
+        setPermissionDenied(true);
+        toast('Admin access denied — update Firestore security rules to allow admins.', 'error');
       }
     });
     return unsub;
-  }, []);
+  }, [currentUser]);
 
   // Real-time listener for verifications
   useEffect(() => {
+    if (!currentUser) return
     const unsub = onSnapshot(collection(db, 'verifications'), (snapshot) => {
       const verMap = {};
       snapshot.forEach(docSnap => {
         verMap[docSnap.id] = docSnap.data();
       });
       setVerifications(verMap);
+    }, (error) => {
+      console.error('Firestore verifications listener error:', error);
     });
     return unsub;
-  }, []);
+  }, [currentUser]);
 
   // Real-time listener for role profiles
   useEffect(() => {
+    if (!currentUser) return
+    const handleError = (label) => (error) => {
+      console.error(`Firestore ${label} listener error:`, error);
+    };
     const unsubFarmers = onSnapshot(collection(db, 'farmers'), (snapshot) => {
       setRoleProfiles(prev => {
         const next = { ...prev };
@@ -59,7 +69,7 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
         });
         return next;
       });
-    });
+    }, handleError('farmers'));
     const unsubBuyers = onSnapshot(collection(db, 'buyers'), (snapshot) => {
       setRoleProfiles(prev => {
         const next = { ...prev };
@@ -68,7 +78,7 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
         });
         return next;
       });
-    });
+    }, handleError('buyers'));
     const unsubTransporters = onSnapshot(collection(db, 'transporters'), (snapshot) => {
       setRoleProfiles(prev => {
         const next = { ...prev };
@@ -77,14 +87,14 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
         });
         return next;
       });
-    });
+    }, handleError('transporters'));
 
     return () => {
       unsubFarmers();
       unsubBuyers();
       unsubTransporters();
     };
-  }, []);
+  }, [currentUser]);
 
   // Mockup data constants to display alongside live data
   const MOCK_USERS = [
@@ -260,12 +270,33 @@ export default function AdminDashboard({ onNavigate, onLogout }) {
 
   return (
     <div className="min-h-screen bg-ivory-50 pb-24">
+      {/* Firestore Permission-Denied Warning Banner */}
+      {permissionDenied && (
+        <div className="sticky top-0 z-[60] flex items-start gap-3 bg-red-50 border-b-2 border-red-400 px-6 py-4 text-red-800">
+          <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-500" />
+          <div>
+            <p className="font-bold text-sm">Firestore Permission Denied</p>
+            <p className="text-xs mt-0.5">
+              Your admin account does not have Firestore read access yet.
+              Deploy the <code className="bg-red-100 px-1 rounded font-mono">firestore.rules</code> file
+              in your project root to the Firebase Console under <strong>Firestore → Rules</strong>, then reload.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="glass sticky top-0 z-50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-earth-900">Admin Dashboard</h1>
-            <p className="text-sm text-earth-500">Platform Overview</p>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo.png" 
+              alt="Nunya AI Logo" 
+              className="w-10 h-10 rounded-xl object-cover"
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-earth-900">Admin Dashboard</h1>
+              <p className="text-sm text-earth-500">Platform Overview</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button 

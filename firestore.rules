@@ -1,0 +1,96 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    // Reads the role field from the user's own document to check for admin.
+    // NOTE: This requires that the calling user's own /users/{uid} doc is readable.
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── users collection ────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Any signed-in user can read their own document.
+      // Admins can read any user document.
+      allow read: if isSignedIn() && (isOwner(uid) || isAdmin());
+
+      // A user can create their own document (during registration).
+      allow create: if isSignedIn() && isOwner(uid);
+
+      // A user can update their own document, or an admin can update any.
+      allow update: if isSignedIn() && (isOwner(uid) || isAdmin());
+
+      // Only admins can delete user documents.
+      allow delete: if isAdmin();
+    }
+
+    // ── verifications collection ─────────────────────────────────────────────
+    match /verifications/{uid} {
+      // Users can read their own verification record; admins can read all.
+      allow read: if isSignedIn() && (isOwner(uid) || isAdmin());
+
+      // Any signed-in user can create/update their own verification record.
+      allow write: if isSignedIn() && (isOwner(uid) || isAdmin());
+    }
+
+    // ── farmers collection ───────────────────────────────────────────────────
+    match /farmers/{uid} {
+      // Farmers can read/write their own profile; buyers can read (for marketplace);
+      // admins can read all.
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isOwner(uid) || isAdmin());
+    }
+
+    // ── buyers collection ────────────────────────────────────────────────────
+    match /buyers/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isOwner(uid) || isAdmin());
+    }
+
+    // ── transporters collection ──────────────────────────────────────────────
+    match /transporters/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isOwner(uid) || isAdmin());
+    }
+
+    // ── reputation collection ────────────────────────────────────────────────
+    match /reputation/{uid} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isOwner(uid) || isAdmin());
+    }
+
+    // ── listings / produce collection ────────────────────────────────────────
+    match /listings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ── orders collection ────────────────────────────────────────────────────
+    match /orders/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ── messages / chat collection ───────────────────────────────────────────
+    match /messages/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // ── Deny everything else ─────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

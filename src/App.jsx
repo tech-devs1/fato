@@ -20,14 +20,21 @@ const ROLE_HOME = {
   admin:     'admin',
 }
 
+// Detect if running as an installed PWA (standalone / fullscreen display mode)
+function isInstalledPWA() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.navigator.standalone === true // iOS Safari
+  )
+}
+
 // ── Inner app — has access to auth context ─────────────────────────────────────
 function AppInner() {
   const { currentUser, userProfile } = useAuth()
   const [loading,     setLoading]     = useState(true)
-  const [showLanding, setShowLanding] = useState(() => {
-    const saved = localStorage.getItem('nunya_show_landing')
-    return saved !== null ? JSON.parse(saved) : true
-  })
+  // Landing page is never shown in installed PWA mode
+  const [showLanding, setShowLanding] = useState(false)
   const [showAuth,    setShowAuth]    = useState(() => {
     const saved = localStorage.getItem('nunya_show_auth')
     return saved !== null ? JSON.parse(saved) : false
@@ -37,10 +44,8 @@ function AppInner() {
     return saved || null
   })
 
-  // Persist state to localStorage
-  useEffect(() => {
-    localStorage.setItem('nunya_show_landing', JSON.stringify(showLanding))
-  }, [showLanding])
+  // Persist state to localStorage (showLanding is intentionally NOT persisted
+  // — it is always derived fresh from PWA detection + auth state each session)
 
   useEffect(() => {
     localStorage.setItem('nunya_show_auth', JSON.stringify(showAuth))
@@ -64,8 +69,19 @@ function AppInner() {
   const handleLoadingComplete = () => {
     setLoading(false)
     if (!currentUser) {
+      if (isInstalledPWA()) {
+        // Installed PWA — skip landing page, go straight to sign-in
+        setShowLanding(false)
+        setShowAuth(true)
+      } else {
+        // Browser — show the landing page first
+        setShowLanding(true)
+        setShowAuth(false)
+      }
+    } else {
+      // Already authenticated — go straight to dashboard
       setShowLanding(false)
-      setShowAuth(true)
+      setShowAuth(false)
     }
   }
 
@@ -85,11 +101,18 @@ function AppInner() {
 
   const handleLogout = () => {
     setCurrentView(null)
-    setShowLanding(true)
     // Clear persisted state on logout
-    localStorage.removeItem('nunya_show_landing')
     localStorage.removeItem('nunya_show_auth')
     localStorage.removeItem('nunya_current_view')
+    if (isInstalledPWA()) {
+      // PWA — go straight to sign-in after logout
+      setShowLanding(false)
+      setShowAuth(true)
+    } else {
+      // Browser — go back to landing page after logout
+      setShowLanding(true)
+      setShowAuth(false)
+    }
   }
 
   // ── 0. Loading Screen ────────────────────────────────────────────────────────

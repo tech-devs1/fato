@@ -75,9 +75,11 @@ export default function BuyerDashboard({ onNavigate, onLogout }) {
       <header className="sticky top-0 z-50 px-6 py-4" style={{ background: 'linear-gradient(135deg, #312e81 0%, #4338ca 60%, #6366f1 100%)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6 text-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Nunya AI Logo" 
+              className="w-10 h-10 rounded-xl object-cover"
+            />
             <div>
               <h1 className="text-xl font-bold text-white">Marketplace</h1>
               <p className="text-xs text-indigo-200">Buyer Portal</p>
