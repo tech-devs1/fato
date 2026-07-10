@@ -61,7 +61,7 @@ export default function AdminDashboard({ onNavigate }) {
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-5 h-5" /> },
     { id: 'users', label: 'Users', icon: <Users className="w-5 h-5" /> },
     { id: 'verifications', label: 'Verifications', icon: <Shield className="w-5 h-5" /> },
-    { id: 'produce', label: 'Produce', icon: <Package className="w-5 h-5" /> },
+
     { id: 'supply', label: 'Supply Chain', icon: <Truck className="w-5 h-5" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="w-5 h-5" /> },
     { id: 'reports', label: 'Reports', icon: <FileText className="w-5 h-5" /> },
@@ -217,12 +217,12 @@ export default function AdminDashboard({ onNavigate }) {
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-earth-900">Document Verification Queue</h2>
               <div className="px-3 py-1 bg-terracotta-100 text-terracotta-800 rounded-full text-xs font-semibold">
-                {usersPending.length} Pending Actions
+                {usersPending.filter(u => u.role === 'transport').length} Pending Actions
               </div>
             </div>
 
             <div className="grid gap-6">
-              {usersPending.map((user) => {
+              {usersPending.filter(u => u.role === 'transport').map((user) => {
                 const checklistItems = [
                   { key: 'phone_verified', label: 'Phone Verification', icon: <Phone className="w-4 h-4" /> },
                   { key: 'email_verified', label: 'Email Verification', icon: <Mail className="w-4 h-4" /> },
@@ -296,22 +296,7 @@ export default function AdminDashboard({ onNavigate }) {
                                   {item.icon}
                                 </div>
                                 <span className="text-xs text-earth-700 font-medium">{item.label}</span>
-                                {/* Action Buttons */}
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      onClick={() => handleApproveTransporter(user)}
-                      className="flex-1 px-4 py-2 bg-forest-600 text-white rounded-xl hover:bg-forest-700 transition"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleRejectTransporter(user)}
-                      className="flex-1 px-4 py-2 bg-terracotta-600 text-white rounded-xl hover:bg-terracotta-700 transition"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
+                              </div>
                               
                               <button
                                 onClick={() => handleToggle(item.key, isVerified)}
@@ -338,50 +323,13 @@ export default function AdminDashboard({ onNavigate }) {
                         })}
                       </div>
                     </div>
+                    <div className="flex gap-3 pt-6">
+                      <button onClick={() => handleApproveTransporter(user)} className="flex-1 px-4 py-2 bg-forest-600 text-white rounded-xl hover:bg-forest-700 transition">Approve</button>
+                      <button onClick={() => handleRejectTransporter(user)} className="flex-1 px-4 py-2 bg-terracotta-600 text-white rounded-xl hover:bg-terracotta-700 transition">Reject</button>
+                    </div>
                   </div>
                 )
               })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'produce' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-earth-900">Produce Listings</h2>
-              <div className="flex gap-2">
-                <button className="px-4 py-2 bg-white rounded-xl font-medium hover:bg-earth-100 transition-colors">
-                  Filter
-                </button>
-              </div>
-            </div>
-
-            <div className="grid gap-4">
-              {produceListings.map((produce) => (
-                <ProduceListingCard key={produce.id} produce={produce} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'supply' && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-earth-900">Supply Chain Monitoring</h2>
-            
-            <div className="grid gap-4">
-              {supplyChainActivity.map((activity) => (
-                <SupplyChainCard key={activity.id} activity={activity} />
-              ))}
-            </div>
-
-            <div className="glass rounded-2xl p-6">
-              <h3 className="text-lg font-semibold text-earth-900 mb-4">Live Supply Map</h3>
-              <div className="h-64 bg-gradient-to-br from-forest-100 to-terracotta-100 rounded-xl flex items-center justify-center">
-                <div className="text-center">
-                  <MapPin className="w-12 h-12 text-terracotta-400 mx-auto mb-2" />
-                  <p className="text-earth-600">Interactive map visualization</p>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -457,7 +405,6 @@ export default function AdminDashboard({ onNavigate }) {
           <NavItem icon={<BarChart3 className="w-6 h-6" />} label="Home" onClick={() => onNavigate('home')} />
           <NavItem icon={<Users className="w-6 h-6" />} label="Users" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
           <NavItem icon={<Shield className="w-6 h-6" />} label="Verify" active={activeTab === 'verifications'} onClick={() => setActiveTab('verifications')} />
-          <NavItem icon={<Package className="w-6 h-6" />} label="Produce" active={activeTab === 'produce'} onClick={() => setActiveTab('produce')} />
         </div>
       </nav>
     </div>
