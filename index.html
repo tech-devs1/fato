@@ -15,7 +15,10 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
   </head>
   <body class="bg-ivory-50 font-sans antialiased">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Instant HTML/CSS Yellow Splash Screen to eliminate white flash while loading JS -->
+      <div style="position: fixed; inset: 0; background: linear-gradient(to bottom right, #FFE999, #FFF9C2, #FDBA74); display: flex; align-items: center; justify-content: center; z-index: 9999;"></div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
