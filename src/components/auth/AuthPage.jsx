@@ -139,6 +139,10 @@ export default function AuthPage({ onAuthenticated }) {
               onDone={onAuthenticated}
             />
           )}
+
+          {mode === 'forgot_password' && (
+            <ResetPasswordForm onSwitch={setMode} />
+          )}
         </div>
 
         <p className="text-center text-earth-400 text-xs mt-6">
@@ -220,6 +224,16 @@ function LoginForm({ onSwitch, onDone }) {
           }
           required
         />
+
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => onSwitch('forgot_password')}
+            className="text-xs font-semibold text-terracotta-600 hover:underline"
+          >
+            Forgot Password?
+          </button>
+        </div>
 
         <button
           type="submit"
@@ -678,12 +692,11 @@ function PhoneForm({ role, onSwitch, onDone }) {
   )
 }
 
-// ── Error Codes Mapper ────────────────────────────────────────────────────────
 function friendlyError(err) {
   console.error("Firebase Auth Error Detail:", err)
   const code = err?.code
   const map = {
-    'auth/user-not-found':         'No account found with that email.',
+    'auth/user-not-found':         'No account found with that email. Please click "Create Account" below to register.',
     'auth/wrong-password':         'Incorrect password.',
     'auth/email-already-in-use':   'An account already exists with that email.',
     'auth/invalid-email':          'Please enter a valid email address.',
@@ -698,6 +711,80 @@ function friendlyError(err) {
     'auth/invalid-verification-code': 'Incorrect OTP code.',
     'auth/code-expired':           'OTP has expired. Please request a new one.',
     'auth/captcha-check-failed':   'reCAPTCHA failed. Please try again.',
+    'auth/invalid-credential':     'Incorrect credentials, or no account found. Please click "Create Account" below to register.',
   }
   return map[code] ?? `${err?.message || 'Something went wrong.'} (${code || 'unknown'})`
+}
+
+// ── FORGOT PASSWORD FORM ────────────────────────────────────────────────────────
+function ResetPasswordForm({ onSwitch }) {
+  const { resetPassword } = useAuth()
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function handleReset(e) {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setBusy(true)
+    try {
+      await resetPassword(email)
+      setSuccess('A password reset link has been sent to your email address.')
+      setEmail('')
+    } catch (err) {
+      setError(friendlyError(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <button onClick={() => onSwitch('login')} className="p-1 rounded-lg hover:bg-earth-100 transition">
+          <ChevronLeft className="w-5 h-5 text-earth-600" />
+        </button>
+        <div>
+          <h2 className="text-2xl font-bold text-earth-900">Reset Password</h2>
+          <p className="text-earth-500 text-sm mt-1">Reset your password via email</p>
+        </div>
+      </div>
+
+      <ErrorBanner msg={error} />
+      <SuccessBanner msg={success} />
+
+      <form onSubmit={handleReset} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-earth-700 mb-2">
+            Email Address
+          </label>
+          <Input
+            icon={<Mail className="w-4 h-4" />}
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full py-3 bg-gradient-to-r from-terracotta-600 to-terracotta-700 text-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:shadow-lg hover:from-terracotta-700 hover:to-terracotta-800 transition-all duration-200 disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Send Reset Email <ArrowRight className="w-4 h-4" /></>}
+        </button>
+      </form>
+
+      <div className="text-center text-sm text-earth-500 pt-4 border-t border-earth-100">
+        Back to{' '}
+        <button onClick={() => onSwitch('login')} className="text-terracotta-600 font-semibold hover:underline">
+          Sign In
+        </button>
+      </div>
+    </div>
+  )
 }

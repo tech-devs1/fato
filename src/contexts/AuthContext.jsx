@@ -10,6 +10,7 @@ import {
   updateProfile,
   signInWithPhoneNumber,
   RecaptchaVerifier,
+  sendPasswordResetEmail,
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, googleProvider, db } from '../lib/firebase'
@@ -305,6 +306,10 @@ export function AuthProvider({ children }) {
     return unsub
   }, [])
 
+  async function resetPassword(email) {
+    await sendPasswordResetEmail(auth, email)
+  }
+
   // ── Context Value ──────────────────────────────────────────────────────────
 
   const value = {
@@ -321,6 +326,7 @@ export function AuthProvider({ children }) {
     sendOTP,
     verifyOTP,
     logOut,
+    resetPassword,
     refreshProfile: () => currentUser && userProfile && loadFullProfile(currentUser.uid, userProfile.role)
   }
 
